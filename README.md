@@ -20,38 +20,40 @@ The dataset consists of multiple structured tables:
 
 ### 1️⃣ Customers Table (customers.csv)
 Contains structured demographic and financial details of customers.
+Below is the table with descriptions that clarify the type of data each field should model, using examples and ranges appropriate for an Indian context, particularly for SBI Life Insurance:
 
-| Column Name              | Data Type     | Description |
-|--------------------------|--------------|-------------|
-| customer_id             | INT (PK)     | Unique identifier for the customer |
-| age                     | INT          | Customer age |
-| gender                  | VARCHAR(10)  | Gender (Male, Female, Other) |
-| income_bracket          | VARCHAR(20)  | Low, Medium, High |
-| employment_status       | VARCHAR(50)  | Salaried, Self-Employed, Retired |
-| marital_status         | VARCHAR(20)  | Single, Married, Divorced |
-| location_city          | VARCHAR(100) | Customer city |
-| policy_ownership_count | INT          | Active policies owned |
-| last_policy_purchase_date | DATE       | Last purchased policy date |
-| credit_score           | FLOAT        | Creditworthiness of the customer |
-| preferred_policy_type  | VARCHAR(50)  | Term, Health, ULIP, etc. |
+| Column Name                 | Data Type     | Description |
+|-----------------------------|---------------|-------------|
+| **customer_id**             | INT (PK)    | A unique, auto-generated integer identifier for each customer record. |
+| **age**                     | INT          | Customer’s age in years. Should be a positive integer (e.g., typically between 18 and 100). |
+| **gender**                  | VARCHAR(10)  | Customer’s gender. Use standardized values such as 'Male', 'Female', or 'Other'. |
+| **income_bracket**          | VARCHAR(20)  | Income range of the customer expressed in numerical brackets based on current Indian income classifications. For example: '0-250000' (lower income), '250001-750000' (middle income), '750001-1500000' (upper middle income), etc. |
+| **employment_status**       | VARCHAR(50)  | Customer’s primary source of income. Typical values include 'Salaried', 'Self-Employed', 'Retired', and may also include 'Student' or others as applicable. |
+| **marital_status**          | VARCHAR(20)  | Marital status of the customer. Expected values include 'Single', 'Married', 'Divorced', or 'Widowed'. |
+| **location_city**           | VARCHAR(100) | Name of the city where the customer resides. Use standardized Indian city names (e.g., 'Mumbai', 'Delhi', 'Bengaluru'). |
+| **policy_ownership_count**  | INT          | The number of active insurance policies currently owned by the customer. Should be a non-negative integer. |
+| **last_policy_purchase_date** | DATE       | The date when the customer last purchased an insurance policy, stored in the YYYY-MM-DD format for consistency and accurate tracking. |
+| **credit_score**            | FLOAT        | Customer’s credit score indicating creditworthiness. Typically ranges from 300 to 900, in line with Indian credit scoring standards. |
+| **preferred_policy_type**   | VARCHAR(50)  | The type of insurance policy the customer prefers. Use standardized names such as 'Term', 'Health', 'ULIP', etc. |
+
 
 ### 2️⃣ Policies Table (policies.csv)
-Contains metadata of life insurance policies.
+Below is the revised table with enhanced descriptions that specify the type of data each field should model, using examples and terminology appropriate for the Indian insurance market, particularly for SBI Life Insurance:
 
-| Column Name             | Data Type     | Description |
-|-------------------------|--------------|-------------|
-| policy_id              | INT (PK)     | Unique identifier for the policy |
-| policy_name           | VARCHAR(255) | Name of the policy |
-| policy_type          | VARCHAR(50)  | Term, Whole Life, Health, etc. |
-| sum_assured         | FLOAT        | Total coverage amount |
-| premium_amount     | FLOAT        | Monthly/Yearly premium |
-| policy_duration_years | INT        | Duration of policy |
-| policy_provider      | VARCHAR(100) | Insurance company name |
-| risk_category       | VARCHAR(50)  | High, Medium, Low risk policy |
-| customer_target_group | VARCHAR(50) | Example: "Young Professionals, Retirees" |
-| description         | TEXT        | Full policy description |
-| keywords           | TEXT        | Keywords extracted (e.g., "term, critical illness, family, investment") |
-| embedding_vector   | VECTOR(768) | Vector representation of the policy description |
+| Column Name               | Data Type     | Description |
+|---------------------------|---------------|-------------|
+| **policy_id**             | INT (PK)    | A unique, auto-incremented identifier for each policy record. |
+| **policy_name**           | VARCHAR(255) | The official name of the policy. This should match the naming used in marketing and official documents (e.g., "SBI Life Shield", "SBI Health Secure"). |
+| **policy_type**           | VARCHAR(50)  | The category of the policy. Use standardized types such as 'Term', 'Whole Life', 'ULIP', 'Endowment', or 'Money Back', which reflect common classifications in the Indian market. |
+| **sum_assured**           | FLOAT        | The total coverage amount offered by the policy, specified in Indian Rupees (INR). Values should be reflective of common Indian thresholds (e.g., 500000.00 for INR 5 Lakh, 10000000.00 for INR 1 Crore). |
+| **premium_amount**        | FLOAT        | The premium payment required, specified in INR. Clarify the frequency (monthly, quarterly, or yearly) in supporting documentation, ensuring consistency with Indian pricing practices. |
+| **policy_duration_years** | INT          | The term or duration of the policy in years. Typical values might be 10, 20, or 30 years, or represent a lifetime cover with a specific numeric convention as defined by the insurer. |
+| **risk_category**         | VARCHAR(50)  | A classification that indicates the inherent risk associated with the policy. Use standardized terms such as 'Low', 'Medium', or 'High' to reflect underwriting risk and product volatility. |
+| **customer_target_group** | VARCHAR(50)  | Specifies the primary demographic or market segment intended for the policy (e.g., "Young Professionals", "Retirees", "Families"). If multiple segments apply, use a comma-separated list. |
+| **description**           | TEXT         | A detailed narrative of the policy, including benefits, exclusions, and key features. Ensure that the description is comprehensive and considers relevant regulatory and market specifics for India. |
+| **keywords**              | TEXT         | A list of comma-separated keywords or tags extracted from the policy description. These keywords (e.g., "term, critical illness, investment, family") help in search optimization and categorization. |
+
+This structure ensures that data is captured consistently and accurately, enabling better analysis and decision-making tailored to the Indian market.
 
 ### 3️⃣ User-Policy Interaction Table (interactions.csv)
 Captures behavioral interactions between users and policies.
