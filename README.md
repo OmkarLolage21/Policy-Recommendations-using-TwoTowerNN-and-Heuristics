@@ -4,7 +4,7 @@
 - [Introduction](#introduction)
 - [System Architecture](#system-architecture)
 - [Data Model](#data-model)
-- [Future Incorporations](#future-incorporations)
+- [Candidate Policy Ranking](#candidate-policy-ranking)
 - [Setup Guide](#setup-guide)
 - [Contributing](#contributing)
 - [License](#license)
@@ -93,23 +93,7 @@ For semantic search and embedding models, we store policy descriptions.
 | keywords       | TEXT        | Extracted keywords |
 | embeddings     | VECTOR(768) | Policy embeddings (if using vector database) |
 
-### 6️⃣ Derived Features for XGBoost Training (xgboost_train.csv)
-This dataset aggregates features for ranking models.
 
-| Column Name               | Data Type     | Description |
-|---------------------------|--------------|-------------|
-| customer_id              | INT          | Unique ID for the customer |
-| policy_id                | INT          | Unique ID for the policy |
-| age                      | INT          | Age of the customer |
-| income_bracket_encoded   | INT          | Encoded income bracket |
-| employment_status_encoded| INT          | Encoded job type |
-| marital_status_encoded   | INT          | Encoded marital status |
-| credit_score             | FLOAT        | Customer credit score |
-| policy_type_encoded      | INT          | Encoded policy type |
-| policy_risk_category     | INT          | Encoded risk category |
-| click_probability        | FLOAT        | Predicted probability of clicking |
-| purchase_probability     | FLOAT        | Predicted probability of purchase |
-| session_engagement_score | FLOAT        | Time spent + comparison count |
 
 ## Final Data Flow
 1️⃣ **Data Collection** → User actions, policy details, and historical transactions are recorded.
@@ -121,8 +105,106 @@ This dataset aggregates features for ranking models.
    - API returns ranked policies based on customer behavior.
    - Google Analytics updates behavioral insights for dynamic recommendations.
 
-## Future Incorporations
-**[List potential enhancements, new features, and improvements planned for future versions.]**
+
+---
+## Candidate Policy Ranking  
+
+Once the **Two-Tower Neural Network** retrieves the top candidate policies for a given customer, the next step is to rank these policies effectively. Below are three different approaches to ranking:  
+
+### 1️⃣ **Heuristics-Based Ranking**  
+
+A simple and effective way to rank policies is by using predefined rules and scoring methods based on available customer and policy attributes.  
+
+**Approach:**  
+- Define a composite score using key attributes such as:  
+  - **Similarity Score** → From the Two-Tower NN (if available).  
+  - **Policy Popularity** → Number of times the policy was clicked/purchased.  
+  - **Customer Fit** → Based on income bracket, preferred policy type, age group, and other demographic factors.  
+  - **Recency Factor** → Policies purchased more recently by similar customers may be ranked higher.  
+- Policies are sorted in descending order based on the composite score.  
+
+**Advantages:**  
+✅ Fast and computationally inexpensive.  
+✅ Easily interpretable.  
+✅ No need for additional training.  
+
+**Limitations:**  
+❌ Not adaptive—requires manual tuning.  
+❌ Cannot generalize complex patterns as well as machine learning models.  
+
+---
+
+### 2️⃣ **Multi-Armed Bandits (MAB) for Adaptive Ranking**  
+
+Multi-Armed Bandits (MAB) provide an **online learning approach** that balances **exploration (testing new policies)** and **exploitation (recommending policies that worked well in the past)**.  
+
+**Steps:**  
+1. Convert categorical data (e.g., **income_bracket**, **policy_type**, **employment_status**) into **numeric features** using encoding (e.g., one-hot encoding, label encoding).  
+2. Initialize a bandit model (e.g., **Epsilon-Greedy, UCB, Thompson Sampling**) to estimate rewards for different policies.  
+3. For a given customer, **select** a policy based on a balance of known rewards and exploration of new policies.  
+4. **Update** the policy’s score based on customer interaction (e.g., clicks, purchases).  
+5. Over time, the bandit algorithm learns to favor policies that lead to higher engagement.  
+
+**Advantages:**  
+✅ Learns in real time and dynamically adapts.  
+✅ No need for offline training (works with continuous feedback).  
+✅ Handles cold-start problems better than pre-trained models.  
+
+**Limitations:**  
+❌ Requires careful tuning of exploration-exploitation tradeoff.  
+❌ Slower convergence compared to fully trained models (needs enough interactions to be effective).  
+
+---
+
+### 3️⃣ **XGBoost for Learning to Rank (LTR)**  
+
+**XGBoost is a powerful gradient-boosting algorithm** that learns from past interactions to rank policies in a way that maximizes customer engagement.  
+
+#### **Dataset Preparation**  
+- **Training File:** `xgboost_train.csv` → Contains feature-rich interactions between customers and policies.  
+- **Feature Engineering:**  
+  - **Customer Features:** Age, income bracket, credit score, policy ownership count, etc.  
+  - **Policy Features:** Policy type, sum assured, premium amount, duration, risk category, etc.  
+  - **Two-Tower NN Similarity Score:** If available, this acts as a strong ranking feature.  
+  - **Engagement Labels:** Clicks, viewed duration, purchase history (used as relevance scores).  
+
+#### **Training Process**  
+1. Train XGBoost with a **ranking objective** (e.g., `rank:ndcg` or `rank:pairwise`).  
+2. Use `policy_corpus.csv` to **generate embeddings** for policies, which can be incorporated into the ranking model.  
+3. Optimize hyperparameters and validate using metrics like **NDCG (Normalized Discounted Cumulative Gain)** or **MAP (Mean Average Precision)**.  
+4. Deploy the trained model to rank the top candidate policies for each customer.  
+
+**Advantages:**  
+✅ Captures complex relationships between customer behavior and policy features.  
+✅ High interpretability using feature importance.  
+✅ Scalable for large datasets and improves over time.  
+
+**Limitations:**  
+❌ Requires labeled training data and periodic retraining.  
+❌ Computationally more expensive than heuristics and MAB.  
+
+---
+
+## **Choosing the Right Ranking Approach**  
+
+| Approach | Learning Method | Adaptability | Training Required | Computational Cost | Best Use Case |
+|----------|----------------|--------------|--------------------|--------------------|---------------|
+| **Heuristics** | Rule-based | Low | No | Low | Quick, static ranking |
+| **Multi-Armed Bandits** | Online learning | High | No | Medium | Adaptive recommendations with real-time feedback |
+| **XGBoost** | Supervised ML | High | Yes | High | Data-driven ranking for high accuracy |
+
+Depending on your business needs and available data, you can:
+- Start with **heuristics** for a baseline ranking approach.  
+- Use **multi-armed bandits** if you want a real-time, self-adjusting ranking mechanism.  
+- Train **XGBoost** if you have enough historical interaction data to build a high-performing ranking model.  
+
+### 🚀 **Final Recommendation**
+For a production-ready ranking system, you can **combine these methods**:  
+- **Two-Tower NN for retrieval**  
+- **Multi-Armed Bandits for dynamic exploration**  
+- **XGBoost for learning an optimal ranking function**  
+
+This hybrid approach ensures both adaptability and accuracy in recommending the best policies to SBI Life Insurance customers. 🚀
 
 ## Setup Guide
 ### Prerequisites
