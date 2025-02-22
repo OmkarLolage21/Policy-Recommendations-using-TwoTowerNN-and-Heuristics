@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sbi-purple: #46166B;
+  --sbi-pink: #E31E54;
+  --sbi-blue: #007DC5;
+  --sbi-light-purple: #F5F3F7;
+}
+
+.bg-sbi-gradient {
+  background: linear-gradient(135deg, var(--sbi-pink) 0%, var(--sbi-purple) 100%);
+}
+
+.text-sbi-purple {
+  color: var(--sbi-purple);
+}
+
+.text-sbi-pink {
+  color: var(--sbi-pink);
+}
+
+.text-sbi-blue {
+  color: var(--sbi-blue);
+}
+
+.bg-sbi-purple {
+  background-color: var(--sbi-purple);
+}
+
+.bg-sbi-pink {
+  background-color: var(--sbi-pink);
+}
+
+.bg-sbi-blue {
+  background-color: var(--sbi-blue);
+}
+
+.hover\:bg-sbi-purple:hover {
+  background-color: var(--sbi-purple);
+}
+
+.border-sbi-purple {
+  border-color: var(--sbi-purple);
+}
