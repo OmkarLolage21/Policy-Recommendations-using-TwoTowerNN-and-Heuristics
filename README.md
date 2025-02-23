@@ -10,7 +10,7 @@
 - [License](#license)
 
 ## Introduction
-**[Provide a brief overview of the project, its purpose, and key objectives.]**
+**The aim of this project is to build a personalized insurance recommendation system for SBI Life that enhances customer engagement and policy sales. It achieves this by using a Two-Tower Neural Network, where one tower learns customer preferences from demographics and interactions, while the other encodes policy features. The system then matches customers with the most relevant policies through AI-driven similarity scoring, ensuring smarter, data-driven recommendations at scale.**
 
 ## System Architecture
 ![System-architecture](./readme-assets/arch.png)
