@@ -5,15 +5,15 @@
 - [System Architecture](#system-architecture)
 - [Data Model](#data-model)
 - [Candidate Policy Ranking](#candidate-policy-ranking)
+- [Repository Structure](#repository-structure)
 - [Setup Guide](#setup-guide)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Introduction
 **The aim of this project is to build a personalized insurance recommendation system for SBI Life that enhances customer engagement and policy sales. It achieves this by using a Two-Tower Neural Network, where one tower learns customer preferences from demographics and interactions, while the other encodes policy features. The system then matches customers with the most relevant policies through AI-driven similarity scoring, ensuring smarter, data-driven recommendations at scale.**
 
 ## System Architecture
 ![System-architecture](./readme-assets/arch.png)
+![NN-architecture](./readme-assets/nn.png)
 
 
 ## Data Model
@@ -96,7 +96,7 @@ For semantic search and embedding models, we store policy descriptions.
 
 
 ---
-## Candidate Policy Ranking Options 
+## Candidate Policy Ranking 
 
 Once the **Two-Tower Neural Network** retrieves the top candidate policies for a given customer, the next step is to rank these policies effectively. Below are three different approaches to ranking:  
 
@@ -187,24 +187,82 @@ Depending on your business needs and available data, you can:
 - Use **multi-armed bandits** if you want a real-time, self-adjusting ranking mechanism.  
 - Train **XGBoost** if you have enough historical interaction data to build a high-performing ranking model.  
 
-## Setup Guide
-### Prerequisites
-**[List the dependencies, tools, and environments required to set up the project.]**
+---
 
-### Installation Steps
-1. **[Clone the repository]**
+## Repository Structure
+
+```
+PolicyRecommendation/
+│── candidate-generation-webservice/   # Flask-based backend for candidate generation
+│   │── flask_app/                     # Flask application directory
+│   │   │── __pycache__/                # Cached Python files
+│   │   │── data/                        # Contains data-related files
+│   │   │── model/                       # Model-related files
+│   │   │── app.py                        # Main Flask application
+│   │   │── config.py                     # Configuration file
+│   │   │── requirements.txt              # Dependencies for backend
+│   │── myvenv/                           # Virtual environment (optional)
+│
+│── datasets/                            # Contains dataset CSV files
+│   │── customers.csv                     # Customer data
+│   │── interactions.csv                   # Interaction data
+│   │── policies.csv                       # Policy data
+│   │── user_policy_interaction.csv        # User-policy interaction data
+│
+│── project/                              # Frontend project
+│   │── src/                              # Source code
+│   │   │── components/                    # UI components
+│   │   │── data/                          # Data-related files
+│   │   │── pages/                         # Page components
+│   │   │── styles/                        # Styling files
+│   │   │── App.tsx                        # Main React component
+│   │   │── index.tsx                      # Entry point
+│   │   │── main.tsx                       # Main file
+│   │   │── vite-env.d.ts                   # TypeScript environment settings
+│   │── index.html                         # Main HTML file
+│   │── package.json                       # Node.js package configuration
+│   │── package-lock.json                  # Lock file for dependencies
+│   │── tailwind.config.js                  # Tailwind CSS configuration
+│   │── tsconfig.json                      # TypeScript configuration
+│   │── tsconfig.node.json                  # TypeScript node config
+│   │── vite.config.ts                      # Vite configuration
+│
+│── readme-assets/                         # Assets for README documentation
+│── .gitignore                             # Git ignore file
+│── .hintrc                                # Linting configuration
+│── candidate_generation.ipynb             # Jupyter Notebook for candidate generation
+│── LICENSE                                # License file
+│── README.md                              # Project documentation
+```
+---
+## Setup Guide
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-repo/sbi-hackathon.git
+   git clone https://github.com/Aaditatgithub/Policy-Recommendations-with-Two-Tower-Architecture.git
    ```
-2. **[Navigate to the project directory]**
+2. **Navigate to the project directory**
    ```bash
-   cd sbi-hackathon
+   cd PolicyRecommendation
    ```
-3. **[Install dependencies]**
+3. **Set up the backend**
    ```bash
-   [Add relevant command here]
+   cd candidate-generation-webservice
+   python -m venv myvenv  # Create virtual environment
+   source myvenv/bin/activate  # Activate virtual environment (Windows: myvenv\Scripts\activate)
+   pip install -r flask_app/requirements.txt  # Install backend dependencies
    ```
-4. **[Run the application]**
+4. **Run the backend service**
    ```bash
-   [Add relevant command here]
+   python flask_app/app.py
    ```
+5. **Set up the frontend**
+   ```bash
+   cd ../project
+   npm install  # Install frontend dependencies
+   ```
+6. **Run the frontend application**
+   ```bash
+   npm run dev
+   ```
+
