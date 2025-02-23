@@ -10,7 +10,7 @@ POLICIES_CSV = os.path.join(DATA_DIR, 'policies.csv')
 INTERACTIONS_CSV = os.path.join(DATA_DIR, 'interactions.csv')
 
 # Model path (if you decide to save and load a pre-trained model)
-MODEL_PATH = os.path.join(BASE_DIR, 'model', 'saved_model.h5')
+MODEL_PATH = os.path.join(BASE_DIR, 'model', 'twotower.h5')
 
 # Preprocessing configuration
 PREPROCESS_CONFIG = {

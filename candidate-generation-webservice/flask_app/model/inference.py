@@ -18,39 +18,33 @@ def recommend_policies(customer_id, top_n=5):
     # Retrieve recent interactions for the customer
     customer_interactions = interactions[interactions['customer_id'] == int(customer_id)]
     if not customer_interactions.empty:
-        # For simplicity, we'll use the most recent interaction record (assuming data is ordered)
+        # Use the most recent interaction record
         interaction_data = customer_interactions.iloc[-1:]
     else:
-        # If no interaction exists, create a default record with zeros
+        # Default interaction record if none exists
         interaction_data = pd.DataFrame([{'clicked': 0, 'viewed_duration': 0, 'comparison_count': 0, 'abandoned_cart': 0}])
 
     # Use all policies as candidates
     candidate_policies = policies.copy()
-
-    # Number of candidate policies
     num_candidates = candidate_policies.shape[0]
 
-    # Replicate the customer data and interaction data to match candidate policies count
+    # Replicate customer and interaction data to match candidate policies count
     customer_features_df = pd.concat([customer_data] * num_candidates, ignore_index=True)
     interaction_features_df = pd.concat([interaction_data] * num_candidates, ignore_index=True)
 
-    # Preprocess the data using the shared preprocessing routine.
-    # This function should return preprocessed arrays for customer, policy, and interaction features.
+    # Preprocess data using our updated transformers that mimic training
     customer_features, policy_features, interaction_features = preprocess_data(
         customer_features_df, candidate_policies, interaction_features_df, PREPROCESS_CONFIG
     )
 
     # Load the pre-trained model
-    model = load_model("./twotower.h5")
+    model = load_model(MODEL_PATH)
 
-    # Get predictions. Model expects a list of inputs: [customer_features, interaction_features, policy_features]
+    # Get predictions. Model expects a list: [customer_features, interaction_features, policy_features]
     predictions = model.predict([customer_features, interaction_features, policy_features])
 
-    # Add predictions (scores) to the candidate policies DataFrame
+    # Add predictions to candidate policies and return top recommendations
     candidate_policies['score'] = predictions
-    # Sort policies by descending score and pick the top N
     recommended = candidate_policies.sort_values(by='score', ascending=False).head(top_n)
-
-    # Convert the recommendations to a dictionary for JSON response
     result = recommended.to_dict(orient='records')
     return result

@@ -11,7 +11,8 @@ def recommend():
         return jsonify({'error': 'Missing customer_id parameter'}), 400
 
     # Call the recommendation function for the given customer_id.
-    # This function will load CSVs, preprocess data, perform inference, and return recommended policies.
+    # This function loads CSVs, preprocesses data using full historical data to ensure consistent feature shapes,
+    # performs inference, and returns recommended policies.
     recommendations = recommend_policies(customer_id)
     
     return jsonify(recommendations)
