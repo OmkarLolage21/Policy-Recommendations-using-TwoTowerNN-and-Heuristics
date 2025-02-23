@@ -13,10 +13,11 @@
 **[Provide a brief overview of the project, its purpose, and key objectives.]**
 
 ## System Architecture
-**[Explain the architecture of the system, including components, interactions, and technologies used. You can add diagrams if needed.]**
+![System-architecture](./readme-assets/arch.png)
+
 
 ## Data Model
-The dataset consists of multiple structured tables:
+The dataset consists of multiple structured tables (For POC, first three have been explored):
 
 ### 1️⃣ Customers Table (customers.csv)
 Contains structured demographic and financial details of customers.
@@ -94,20 +95,8 @@ For semantic search and embedding models, we store policy descriptions.
 | embeddings     | VECTOR(768) | Policy embeddings (if using vector database) |
 
 
-
-## Final Data Flow
-1️⃣ **Data Collection** → User actions, policy details, and historical transactions are recorded.
-2️⃣ **Feature Engineering** → Convert categorical data into numeric features (encoding).
-3️⃣ **Model Training**
-   - XGBoost → Uses xgboost_train.csv to learn ranking.
-   - Two-Tower NN → Uses policy_corpus.csv for embedding-based matching.
-4️⃣ **Real-Time Inference**
-   - API returns ranked policies based on customer behavior.
-   - Google Analytics updates behavioral insights for dynamic recommendations.
-
-
 ---
-## Candidate Policy Ranking  
+## Candidate Policy Ranking Options 
 
 Once the **Two-Tower Neural Network** retrieves the top candidate policies for a given customer, the next step is to rank these policies effectively. Below are three different approaches to ranking:  
 
@@ -198,14 +187,6 @@ Depending on your business needs and available data, you can:
 - Use **multi-armed bandits** if you want a real-time, self-adjusting ranking mechanism.  
 - Train **XGBoost** if you have enough historical interaction data to build a high-performing ranking model.  
 
-### 🚀 **Final Recommendation**
-For a production-ready ranking system, you can **combine these methods**:  
-- **Two-Tower NN for retrieval**  
-- **Multi-Armed Bandits for dynamic exploration**  
-- **XGBoost for learning an optimal ranking function**  
-
-This hybrid approach ensures both adaptability and accuracy in recommending the best policies to SBI Life Insurance customers. 🚀
-
 ## Setup Guide
 ### Prerequisites
 **[List the dependencies, tools, and environments required to set up the project.]**
@@ -227,9 +208,3 @@ This hybrid approach ensures both adaptability and accuracy in recommending the 
    ```bash
    [Add relevant command here]
    ```
-
-## Contributing
-**[Provide guidelines for contributing, including coding standards, branching strategies, and pull request procedures.]**
-
-## License
-**[Specify the license under which the project is distributed.]**
