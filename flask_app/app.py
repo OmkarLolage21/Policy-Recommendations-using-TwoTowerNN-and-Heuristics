@@ -1,18 +1,19 @@
-# backend/app.py
-import traceback
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
+import threading
 from datetime import datetime, timedelta
+import traceback
 import csv
 import os
 from pathlib import Path
+from cart_service import CartService
 
 app = Flask(__name__)
 CORS(app)
 
-# Path configuration
+# ==== File paths and directory setup ====
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 TRACKING_FILE = DATA_DIR / 'interactions_tracking.csv'
@@ -20,7 +21,6 @@ POLICIES_FILE = DATA_DIR / 'policies.csv'
 CUSTOMERS_FILE = DATA_DIR / 'customers.csv'
 INTERACTIONS_FILE = DATA_DIR / 'interactions.csv'
 
-# Ensure data directory exists
 DATA_DIR.mkdir(exist_ok=True)
 
 if not TRACKING_FILE.exists():
@@ -31,6 +31,8 @@ if not TRACKING_FILE.exists():
             'customer_id', 'policy_id', 'interaction_type', 
             'duration', 'query', 'referrer', 'additional_data'
         ])
+
+# ==== Utility Functions ====
 
 def log_interaction(data):
     """Log interaction to CSV file"""
@@ -52,32 +54,90 @@ def log_interaction(data):
         writer = csv.writer(f)
         writer.writerow(row)
 
+def safe_read_csv(path, default_columns=None):
+    try:
+        df = pd.read_csv(path)
+        print(f"Available columns in {path}: {df.columns.tolist()}")
+        if default_columns:
+            for col in default_columns:
+                if col not in df.columns:
+                    df[col] = None
+        return df
+    except Exception as e:
+        print(f"Error reading {path}: {str(e)}")
+        return pd.DataFrame(columns=default_columns if default_columns else [])
+
+# ==== Cart Service Initialization ====
+cart_service = CartService()
+
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    data = request.json
+    customer_id = data.get('customer_id')
+    policy_id = data.get('policy_id')
+    
+    try:
+        cart_service.add_to_cart(customer_id, policy_id)
+        
+        log_interaction({
+            'eventType': 'cart_add',
+            'customerId': customer_id,
+            'policyId': policy_id,
+            'timestamp': datetime.now().isoformat(),
+            'interactionType': 'cart_add'
+        })
+        
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart/checkout', methods=['POST'])
+def checkout():
+    data = request.json
+    customer_id = data.get('customer_id')
+    
+    try:
+        success = cart_service.checkout(customer_id)
+        if success:
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'error': 'Checkout failed'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cart', methods=['GET'])
+def get_cart():
+    customer_id = request.args.get('customer_id')
+    
+    try:
+        cart = cart_service.get_cart(customer_id)
+        return jsonify(cart)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==== Tracking and Core APIs ====
+
 @app.route('/track', methods=['POST'])
 def track():
-    """Endpoint for tracking all events"""
     data = request.json
     log_interaction(data)
     return jsonify({'status': 'success'})
 
 @app.route('/search_policies', methods=['GET'])
 def search_policies():
-    """Search policies endpoint"""
     query = request.args.get('q', '').lower()
     
     try:
         policies = pd.read_csv(POLICIES_FILE)
-        
         if not query:
             return jsonify(policies.head(20).to_dict('records'))
         
-        # Search in multiple fields
         mask = (
             policies['policy_name'].str.lower().str.contains(query) |
             policies['policy_type'].str.lower().str.contains(query) |
             policies['description'].str.lower().str.contains(query) |
             policies['keywords'].str.lower().str.contains(query)
         )
-        
         results = policies[mask].to_dict('records')
         return jsonify(results)
     except Exception as e:
@@ -85,26 +145,21 @@ def search_policies():
 
 @app.route('/recommend_policies', methods=['GET'])
 def recommend_policies():
-    """Policy recommendation endpoint"""
     customer_id = request.args.get('customer_id')
     top_n = int(request.args.get('top_n', 5))
     
     try:
-        # In a real implementation, you'd use your ML model here
         policies = pd.read_csv(POLICIES_FILE)
-        
-        # Simple "recommendation" - just return random policies
         recommended = policies.sample(min(top_n, len(policies)))
         
-        # Log the recommendation
-        for _, policy in recommended.iterrows():
+        for i, policy in recommended.iterrows():
             log_interaction({
                 'eventType': 'policy_recommendation',
                 'customerId': customer_id,
                 'policyId': policy['policy_id'],
                 'timestamp': datetime.now().isoformat(),
                 'additional_data': {
-                    'recommendation_rank': _ + 1
+                    'recommendation_rank': i + 1
                 }
             })
         
@@ -112,23 +167,19 @@ def recommend_policies():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/analytics', methods=['GET'])
 def get_analytics():
     try:
-        # Load data with fallbacks
         policies = safe_read_csv(POLICIES_FILE, ['policy_id', 'policy_name', 'policy_type', 'premium_amount (INR)', 'sum_assured (INR)'])
         customers = safe_read_csv(CUSTOMERS_FILE, ['customer_id', 'name', 'age', 'location_city'])
         interactions = safe_read_csv(INTERACTIONS_FILE, ['interaction_id', 'customer_id', 'policy_id', 'purchased', 'timestamp'])
-        
-        # Clean data
+
         policies['premium'] = policies['premium_amount (INR)'].replace('[^\d.]', '', regex=True).astype(float)
         policies['sum_assured'] = policies['sum_assured (INR)'].replace('[^\d.]', '', regex=True).astype(float)
         
         interactions['date'] = pd.to_datetime(interactions['timestamp'], errors='coerce')
         interactions = interactions.dropna(subset=['date'])
         
-        # Calculate metrics
         metrics = {
             'total_policies': len(policies),
             'total_customers': len(customers),
@@ -136,7 +187,6 @@ def get_analytics():
             'avg_premium': round(policies['premium'].mean(), 2) if len(policies) > 0 else 0
         }
         
-        # Prepare chart data - ensure we're working with Series, not DataFrames
         policy_types = policies['policy_type'].value_counts()
         policy_performance = {
             'labels': policy_types.index.tolist(),
@@ -147,7 +197,6 @@ def get_analytics():
             }]
         }
         
-        # Customer segments by age
         customers['age_group'] = pd.cut(
             customers['age'],
             bins=[0, 30, 50, 100],
@@ -162,12 +211,10 @@ def get_analytics():
             }]
         }
         
-        # Sales trend (last 7 days)
         last_week = datetime.now() - timedelta(days=7)
         sales_data = interactions[interactions['date'] > last_week]
         sales_trend = sales_data.groupby(sales_data['date'].dt.date).size()
         
-        # Prepare recent activities - ensure we're converting to list properly
         recent_activities = []
         if not interactions.empty:
             recent_activities = (
@@ -185,7 +232,6 @@ def get_analytics():
                 .tolist()
             )
         
-        # Prepare top policies - ensure we're working with proper DataFrame operations
         top_policies = []
         if not policies.empty:
             top_policies = (
@@ -210,26 +256,14 @@ def get_analytics():
             'top_policies': top_policies,
             'recent_activities': recent_activities
         })
-        
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
 
-def safe_read_csv(path, default_columns=None):
-    """Safely read CSV with error handling"""
-    try:
-        df = pd.read_csv(path)
-        print(f"Available columns in {path}: {df.columns.tolist()}")  # Fixed variable name
-
-        if default_columns:
-            for col in default_columns:
-                if col not in df.columns:
-                    df[col] = None
-        return df
-    except Exception as e:
-        print(f"Error reading {path}: {str(e)}")
-        return pd.DataFrame(columns=default_columns if default_columns else [])
-# Initialize tracking file if it doesn't exist
-
+# ==== Startup ====
 if __name__ == '__main__':
+    abandoned_cart_thread = threading.Thread(target=cart_service.check_abandoned_carts)
+    abandoned_cart_thread.daemon = True
+    abandoned_cart_thread.start()
+    
     app.run(debug=True, port=5000)
