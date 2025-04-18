@@ -6,6 +6,9 @@
   import PolicyList from './components/PolicyList';
   import './styles/theme.css';
   import HeroGeometric from './pages/HeroGeometric';
+import ComparePage from './pages/ComparePage';
+import CartPage from './pages/CartPage';
+import SearchPage from './pages/SearchPage';
 
   function App() {
     return (
@@ -17,6 +20,9 @@
           <Route path="/customer/:id" element={<CustomerProfile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/policies" element={<PolicyList />} />
+          <Route path="/compare" element={<ComparePage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/search" element={<SearchPage />} />
         </Routes>
       </Router>
     );

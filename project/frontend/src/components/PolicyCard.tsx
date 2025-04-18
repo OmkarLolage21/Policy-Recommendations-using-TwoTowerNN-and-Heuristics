@@ -1,6 +1,4 @@
-// src/components/PolicyCard.tsx
 import React, { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
 import { trackPolicyInteraction, trackElementView } from '../utils/tracking';
 
 interface Policy {
@@ -14,7 +12,6 @@ interface Policy {
   keywords?: string;
   risk_category?: string;
   customer_target_group?: string;
-  // Add CSV column names exactly as they appear
   'premium_amount (INR)'?: number | string;
   'sum_assured (INR)'?: number | string;
   [key: string]: any;
@@ -22,20 +19,24 @@ interface Policy {
 
 interface PolicyCardProps {
   policy: Policy;
+  customerId?: string | null;
+  onAddToCart: (policyId: string) => void;
+  onCompare: (policyId: string) => void;
   interactionContext?: string;
   className?: string;
 }
 
 const PolicyCard: React.FC<PolicyCardProps> = ({ 
   policy, 
+  customerId,
+  onAddToCart,
+  onCompare,
   interactionContext = 'browse',
   className = ''
 }) => {
-  const { id: customerId } = useParams<{ id: string }>();
   const cardRef = useRef<HTMLDivElement>(null);
   const cardId = `policy-card-${policy?.policy_id || 'unknown'}`;
 
-  // Get values from either direct or CSV-style properties
   const getPolicyValue = (key: string) => {
     return policy[key] || policy[`${key} (INR)`] || null;
   };
@@ -80,7 +81,6 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
     );
   };
 
-  // Get actual values from either property naming convention
   const premiumAmount = getPolicyValue('premium_amount');
   const sumAssured = getPolicyValue('sum_assured');
   const duration = policy.policy_duration_years;
@@ -143,12 +143,6 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
               {formatValue(duration, false)}
             </p>
           </div>
-          {/* <div>
-            <p className="text-xs text-gray-500">Type</p>
-            <p className="font-bold text-lg">
-              {policy.policy_type || '--'}
-            </p>
-          </div> */}
         </div>
 
         {getKeywords().length > 0 && (
@@ -166,13 +160,7 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
             className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              trackPolicyInteraction(
-                customerId || 'guest',
-                policy.policy_id,
-                'cart_add',
-                undefined,
-                { context: interactionContext }
-              );
+              onAddToCart(policy.policy_id);
             }}
           >
             Add to Cart
@@ -181,13 +169,7 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
             className="px-4 py-2 border border-violet-600 text-violet-600 rounded-lg hover:bg-violet-50 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              trackPolicyInteraction(
-                customerId || 'guest',
-                policy.policy_id,
-                'compare',
-                undefined,
-                { context: interactionContext }
-              );
+              onCompare(policy.policy_id);
             }}
           >
             Compare
