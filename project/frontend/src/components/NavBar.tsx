@@ -61,6 +61,13 @@ const Navbar: React.FC<NavbarProps> = ({
                   Dashboard
                 </Link>
                 <Link 
+                  to="/promotion" 
+                  className="hover:bg-violet-700 px-3 py-2 rounded"
+                  onClick={() => trackEvent('nav_promotion_click')}
+                >
+                  Promotions
+                </Link>
+                <Link 
                   to="/policies" 
                   className="hover:bg-violet-700 px-3 py-2 rounded"
                   onClick={() => trackEvent('nav_policies_click')}

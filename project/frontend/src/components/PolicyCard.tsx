@@ -81,6 +81,36 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
     );
   };
 
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!policy?.policy_id) return;
+    
+    trackPolicyInteraction(
+      customerId || 'guest',
+      policy.policy_id,
+      'cart_add',
+      undefined,
+      { context: interactionContext }
+    );
+    
+    onAddToCart(policy.policy_id);
+  };
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!policy?.policy_id) return;
+    
+    trackPolicyInteraction(
+      customerId || 'guest',
+      policy.policy_id,
+      'compare',
+      undefined,
+      { context: interactionContext }
+    );
+    
+    onCompare(policy.policy_id);
+  };
+
   const premiumAmount = getPolicyValue('premium_amount');
   const sumAssured = getPolicyValue('sum_assured');
   const duration = policy.policy_duration_years;
@@ -147,7 +177,7 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
 
         {getKeywords().length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {getKeywords().map((keyword, index) => (
+            {getKeywords().slice(0, 3).map((keyword, index) => (
               <span key={index} className="text-xs bg-violet-100 text-violet-800 px-2 py-1 rounded-full">
                 {keyword}
               </span>
@@ -158,19 +188,13 @@ const PolicyCard: React.FC<PolicyCardProps> = ({
         <div className="flex space-x-3 pt-2 border-t border-gray-100">
           <button 
             className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart(policy.policy_id);
-            }}
+            onClick={handleAddToCart}
           >
             Add to Cart
           </button>
           <button 
             className="px-4 py-2 border border-violet-600 text-violet-600 rounded-lg hover:bg-violet-50 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCompare(policy.policy_id);
-            }}
+            onClick={handleCompare}
           >
             Compare
           </button>
