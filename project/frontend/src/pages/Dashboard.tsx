@@ -3,6 +3,7 @@ import { BarChart, PieChart, LineChart } from '../components/dashboard/Charts';
 import AreaChart from '../components/dashboard/AreaChart';
 import DonutChart from '../components/dashboard/DonutChart';
 import DotChart from '../components/dashboard/DotChart';
+import WaveChart from '../components/dashboard/WaveChart';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
 import TrackingInsights from '../components/dashboard/TrackingInsights';
 import Navbar from '../components/NavBar';
@@ -283,6 +284,11 @@ const Dashboard = () => {
               <FiDollarSign className="text-yellow-500 text-2xl" />
             </div>
           </div>
+        </div>
+
+        {/* Wave Chart - Featured */}
+        <div className="mb-8">
+          <WaveChart title="AI Model Performance Comparison" />
         </div>
 
         {/* Tracking Insights */}

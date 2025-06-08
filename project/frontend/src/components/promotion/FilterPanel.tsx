@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Filter, X, Plus } from 'lucide-react';
+import { Save, Filter, X, Plus, Users, Target, Activity, BarChart3, TrendingUp, Eye, MousePointer, ShoppingCart, Clock, RotateCcw } from 'lucide-react';
 import { FilterState, FilterPreset } from '../../types/promotion';
 
 interface FilterPanelProps {
@@ -23,9 +23,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   const [presetName, setPresetName] = useState('');
   const [expandedSections, setExpandedSections] = useState({
     demographic: true,
-    policy: false,
-    interaction: false,
-    persona: false
+    policy: true,
+    interaction: true,
+    persona: true
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -86,34 +86,37 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold flex items-center">
-          <Filter className="mr-2" size={20} />
+          <Filter className="mr-2 text-violet-600" size={20} />
           Customer Filters
         </h2>
         <button
           onClick={clearAllFilters}
-          className="text-sm text-gray-500 hover:text-red-600 flex items-center"
+          className="text-sm text-gray-500 hover:text-red-600 flex items-center transition-colors"
         >
-          <X size={16} className="mr-1" />
+          <RotateCcw size={16} className="mr-1" />
           Clear All
         </button>
       </div>
 
-      {/* Demographic Filters */}
-      <div className="border border-gray-200 rounded-lg">
+      {/* Demographics Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection('demographic')}
-          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
+          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
         >
-          <span>Demographic Filters</span>
+          <div className="flex items-center">
+            <Users className="mr-2 text-blue-600" size={18} />
+            <span>Demographics</span>
+          </div>
           <span className={`transform transition-transform ${expandedSections.demographic ? 'rotate-180' : ''}`}>
             ▼
           </span>
         </button>
         {expandedSections.demographic && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-6 bg-white">
             {/* Age Range */}
             <div>
-              <label className="flex items-center mb-2">
+              <label className="flex items-center mb-3">
                 <input
                   type="checkbox"
                   checked={filters.demographic.age.enabled}
@@ -121,102 +124,359 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                     ...filters.demographic.age,
                     enabled: e.target.checked
                   })}
-                  className="mr-2"
+                  className="mr-2 w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
                 />
-                <span className="text-sm font-medium">Age Range</span>
+                <span className="text-sm font-medium text-gray-700">Age Range</span>
               </label>
               {filters.demographic.age.enabled && (
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.demographic.age.min}
-                    onChange={(e) => updateFilters('demographic', 'age', {
-                      ...filters.demographic.age,
-                      min: parseInt(e.target.value) || 18
-                    })}
-                    className="w-20 px-2 py-1 border rounded text-sm"
-                  />
-                  <span className="py-1">to</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.demographic.age.max}
-                    onChange={(e) => updateFilters('demographic', 'age', {
-                      ...filters.demographic.age,
-                      max: parseInt(e.target.value) || 65
-                    })}
-                    className="w-20 px-2 py-1 border rounded text-sm"
-                  />
+                <div className="ml-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <input
+                      type="number"
+                      placeholder="18"
+                      value={filters.demographic.age.min}
+                      onChange={(e) => updateFilters('demographic', 'age', {
+                        ...filters.demographic.age,
+                        min: parseInt(e.target.value) || 18
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      placeholder="65"
+                      value={filters.demographic.age.max}
+                      onChange={(e) => updateFilters('demographic', 'age', {
+                        ...filters.demographic.age,
+                        max: parseInt(e.target.value) || 65
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">years</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-violet-600 h-2 rounded-full" 
+                      style={{ width: `${((filters.demographic.age.max - filters.demographic.age.min) / 47) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Gender */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Gender</label>
-              <div className="space-y-1">
-                {['Male', 'Female', 'Other'].map(gender => (
-                  <label key={gender} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.demographic.gender.includes(gender)}
-                      onChange={(e) => {
-                        const newGenders = e.target.checked
-                          ? [...filters.demographic.gender, gender]
-                          : filters.demographic.gender.filter(g => g !== gender);
-                        updateFilters('demographic', 'gender', newGenders);
-                      }}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{gender}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+  <label className="text-sm font-medium text-gray-700 mb-3 block">Gender</label>
+  <div className="flex flex-wrap gap-2 mt-2">
+    {['Male', 'Female', 'Other'].map(gender => (
+      <button
+        key={gender}
+        type="button"
+        onClick={() => {
+          const isSelected = filters.demographic.gender.includes(gender);
+          const newGenders = isSelected
+            ? filters.demographic.gender.filter(g => g !== gender)
+            : [...filters.demographic.gender, gender];
+          updateFilters('demographic', 'gender', newGenders);
+        }}
+        className={`px-3 py-2 rounded-lg text-sm border ${
+          filters.demographic.gender.includes(gender)
+            ? 'bg-violet-100 border-violet-500 text-violet-800'
+            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        {gender}
+      </button>
+    ))}
+  </div>
+  {filters.demographic.gender.length > 0 && (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {filters.demographic.gender.map(gender => (
+        <span key={gender} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-violet-100 text-violet-800">
+          {gender}
+          <button
+            onClick={() => {
+              const newGenders = filters.demographic.gender.filter(g => g !== gender);
+              updateFilters('demographic', 'gender', newGenders);
+            }}
+            className="ml-1 text-violet-600 hover:text-violet-800"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+    </div>
+  )}
+</div>
 
             {/* Income Bracket */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Income Bracket</label>
-              <div className="space-y-1">
-                {['0-250000', '250001-750000', '750001-1500000', '1500001+'].map(bracket => (
-                  <label key={bracket} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.demographic.income_bracket.includes(bracket)}
-                      onChange={(e) => {
-                        const newBrackets = e.target.checked
-                          ? [...filters.demographic.income_bracket, bracket]
-                          : filters.demographic.income_bracket.filter(b => b !== bracket);
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Income Bracket</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newBrackets = [...filters.demographic.income_bracket];
+                      if (!newBrackets.includes(e.target.value)) {
+                        newBrackets.push(e.target.value);
                         updateFilters('demographic', 'income_bracket', newBrackets);
-                      }}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">₹{bracket}</span>
-                  </label>
-                ))}
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select income range</option>
+                  <option value="0-250000">₹0 - ₹2.5L</option>
+                  <option value="250001-750000">₹2.5L - ₹7.5L</option>
+                  <option value="750001-1500000">₹7.5L - ₹15L</option>
+                  <option value="1500001+">₹15L+</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
               </div>
+              {filters.demographic.income_bracket.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.demographic.income_bracket.map(bracket => (
+                    <span key={bracket} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      ₹{bracket}
+                      <button
+                        onClick={() => {
+                          const newBrackets = filters.demographic.income_bracket.filter(b => b !== bracket);
+                          updateFilters('demographic', 'income_bracket', newBrackets);
+                        }}
+                        className="ml-1 text-green-600 hover:text-green-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Employment Status */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Employment Status</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newStatuses = [...filters.demographic.employment_status];
+                      if (!newStatuses.includes(e.target.value)) {
+                        newStatuses.push(e.target.value);
+                        updateFilters('demographic', 'employment_status', newStatuses);
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select employment status</option>
+                  <option value="Salaried">Salaried</option>
+                  <option value="Self-Employed">Self-Employed</option>
+                  <option value="Business Owner">Business Owner</option>
+                  <option value="Retired">Retired</option>
+                  <option value="Freelancer">Freelancer</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              {filters.demographic.employment_status.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.demographic.employment_status.map(status => (
+                    <span key={status} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                      {status}
+                      <button
+                        onClick={() => {
+                          const newStatuses = filters.demographic.employment_status.filter(s => s !== status);
+                          updateFilters('demographic', 'employment_status', newStatuses);
+                        }}
+                        className="ml-1 text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Marital Status */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Marital Status</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newStatuses = [...filters.demographic.marital_status];
+                      if (!newStatuses.includes(e.target.value)) {
+                        newStatuses.push(e.target.value);
+                        updateFilters('demographic', 'marital_status', newStatuses);
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select marital status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              {filters.demographic.marital_status.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.demographic.marital_status.map(status => (
+                    <span key={status} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                      {status}
+                      <button
+                        onClick={() => {
+                          const newStatuses = filters.demographic.marital_status.filter(s => s !== status);
+                          updateFilters('demographic', 'marital_status', newStatuses);
+                        }}
+                        className="ml-1 text-purple-600 hover:text-purple-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Location</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newCities = [...filters.demographic.location_city];
+                      if (!newCities.includes(e.target.value)) {
+                        newCities.push(e.target.value);
+                        updateFilters('demographic', 'location_city', newCities);
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select cities</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bengaluru">Bengaluru</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Pune">Pune</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Ahmedabad">Ahmedabad</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              {filters.demographic.location_city.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.demographic.location_city.map(city => (
+                    <span key={city} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                      {city}
+                      <button
+                        onClick={() => {
+                          const newCities = filters.demographic.location_city.filter(c => c !== city);
+                          updateFilters('demographic', 'location_city', newCities);
+                        }}
+                        className="ml-1 text-indigo-600 hover:text-indigo-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Policy Filters */}
-      <div className="border border-gray-200 rounded-lg">
+      {/* Policy Preferences Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection('policy')}
-          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
+          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
         >
-          <span>Policy Filters</span>
+          <div className="flex items-center">
+            <Target className="mr-2 text-green-600" size={18} />
+            <span>Policy Preferences</span>
+          </div>
           <span className={`transform transition-transform ${expandedSections.policy ? 'rotate-180' : ''}`}>
             ▼
           </span>
         </button>
         {expandedSections.policy && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-6 bg-white">
+            {/* Policy Ownership Count */}
+            <div>
+              <label className="flex items-center mb-3">
+                <input
+                  type="checkbox"
+                  checked={filters.policy.policy_ownership_count.enabled}
+                  onChange={(e) => updateFilters('policy', 'policy_ownership_count', {
+                    ...filters.policy.policy_ownership_count,
+                    enabled: e.target.checked
+                  })}
+                  className="mr-2 w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Policy Ownership Count</span>
+              </label>
+              {filters.policy.policy_ownership_count.enabled && (
+                <div className="ml-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.policy.policy_ownership_count.min}
+                      onChange={(e) => updateFilters('policy', 'policy_ownership_count', {
+                        ...filters.policy.policy_ownership_count,
+                        min: parseInt(e.target.value) || 0
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      placeholder="5"
+                      value={filters.policy.policy_ownership_count.max}
+                      onChange={(e) => updateFilters('policy', 'policy_ownership_count', {
+                        ...filters.policy.policy_ownership_count,
+                        max: parseInt(e.target.value) || 5
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full" 
+                      style={{ width: `${(filters.policy.policy_ownership_count.max / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Credit Score */}
             <div>
-              <label className="flex items-center mb-2">
+              <label className="flex items-center mb-3">
                 <input
                   type="checkbox"
                   checked={filters.policy.credit_score.enabled}
@@ -224,86 +484,128 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                     ...filters.policy.credit_score,
                     enabled: e.target.checked
                   })}
-                  className="mr-2"
+                  className="mr-2 w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
                 />
-                <span className="text-sm font-medium">Credit Score Range</span>
+                <span className="text-sm font-medium text-gray-700">Credit Score</span>
               </label>
               {filters.policy.credit_score.enabled && (
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.policy.credit_score.min}
-                    onChange={(e) => updateFilters('policy', 'credit_score', {
-                      ...filters.policy.credit_score,
-                      min: parseInt(e.target.value) || 300
-                    })}
-                    className="w-20 px-2 py-1 border rounded text-sm"
-                  />
-                  <span className="py-1">to</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.policy.credit_score.max}
-                    onChange={(e) => updateFilters('policy', 'credit_score', {
-                      ...filters.policy.credit_score,
-                      max: parseInt(e.target.value) || 900
-                    })}
-                    className="w-20 px-2 py-1 border rounded text-sm"
-                  />
+                <div className="ml-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <input
+                      type="number"
+                      placeholder="300"
+                      value={filters.policy.credit_score.min}
+                      onChange={(e) => updateFilters('policy', 'credit_score', {
+                        ...filters.policy.credit_score,
+                        min: parseInt(e.target.value) || 300
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      placeholder="900"
+                      value={filters.policy.credit_score.max}
+                      onChange={(e) => updateFilters('policy', 'credit_score', {
+                        ...filters.policy.credit_score,
+                        max: parseInt(e.target.value) || 900
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-600 h-2 rounded-full" 
+                      style={{ width: `${((filters.policy.credit_score.max - 300) / 600) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Preferred Policy Type */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Preferred Policy Type</label>
-              <div className="space-y-1">
-                {['Term', 'ULIP', 'Health', 'Endowment', 'Money Back', 'Pension'].map(type => (
-                  <label key={type} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.policy.preferred_policy_type.includes(type)}
-                      onChange={(e) => {
-                        const newTypes = e.target.checked
-                          ? [...filters.policy.preferred_policy_type, type]
-                          : filters.policy.preferred_policy_type.filter(t => t !== type);
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Preferred Policy Type</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newTypes = [...filters.policy.preferred_policy_type];
+                      if (!newTypes.includes(e.target.value)) {
+                        newTypes.push(e.target.value);
                         updateFilters('policy', 'preferred_policy_type', newTypes);
-                      }}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{type}</span>
-                  </label>
-                ))}
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select policy types</option>
+                  <option value="Term">Term Insurance</option>
+                  <option value="ULIP">ULIP</option>
+                  <option value="Health">Health Insurance</option>
+                  <option value="Endowment">Endowment</option>
+                  <option value="Money Back">Money Back</option>
+                  <option value="Pension">Pension</option>
+                  <option value="Child Plan">Child Plan</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
               </div>
+              {filters.policy.preferred_policy_type.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.policy.preferred_policy_type.map(type => (
+                    <span key={type} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                      {type}
+                      <button
+                        onClick={() => {
+                          const newTypes = filters.policy.preferred_policy_type.filter(t => t !== type);
+                          updateFilters('policy', 'preferred_policy_type', newTypes);
+                        }}
+                        className="ml-1 text-orange-600 hover:text-orange-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Interaction Filters */}
-      <div className="border border-gray-200 rounded-lg">
+      {/* Interaction Behavior Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection('interaction')}
-          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center justify-between"
+          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
         >
-          <span>Interaction Filters</span>
+          <div className="flex items-center">
+            <BarChart3 className="mr-2 text-purple-600" size={18} />
+            <span>Interaction Behavior</span>
+          </div>
           <span className={`transform transition-transform ${expandedSections.interaction ? 'rotate-180' : ''}`}>
             ▼
           </span>
         </button>
         {expandedSections.interaction && (
-          <div className="p-4 space-y-4">
-            {/* Clicked */}
+          <div className="p-4 space-y-6 bg-white">
+            {/* Clicked Policies */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Has Clicked Policies</label>
+              <label className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <MousePointer className="mr-2 text-blue-500" size={16} />
+                Clicked Policies
+              </label>
               <select
                 value={filters.interaction.clicked === null ? '' : filters.interaction.clicked.toString()}
                 onChange={(e) => {
                   const value = e.target.value === '' ? null : e.target.value === 'true';
                   updateFilters('interaction', 'clicked', value);
                 }}
-                className="w-full px-3 py-2 border rounded text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
                 <option value="">Any</option>
                 <option value="true">Yes</option>
@@ -313,19 +615,213 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
             {/* Purchased */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Has Purchased</label>
+              <label className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <ShoppingCart className="mr-2 text-green-500" size={16} />
+                Purchased
+              </label>
               <select
                 value={filters.interaction.purchased === null ? '' : filters.interaction.purchased.toString()}
                 onChange={(e) => {
                   const value = e.target.value === '' ? null : e.target.value === 'true';
                   updateFilters('interaction', 'purchased', value);
                 }}
-                className="w-full px-3 py-2 border rounded text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
                 <option value="">Any</option>
                 <option value="true">Yes</option>
                 <option value="false">No</option>
               </select>
+            </div>
+
+            {/* Abandoned Cart */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                <X className="mr-2 text-red-500" size={16} />
+                Abandoned Cart
+              </label>
+              <select
+                value={filters.interaction.abandoned_cart === null ? '' : filters.interaction.abandoned_cart.toString()}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? null : e.target.value === 'true';
+                  updateFilters('interaction', 'abandoned_cart', value);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value="">Any</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+
+            {/* Viewing Duration */}
+            <div>
+              <label className="flex items-center mb-3">
+                <input
+                  type="checkbox"
+                  checked={filters.interaction.viewed_duration.enabled}
+                  onChange={(e) => updateFilters('interaction', 'viewed_duration', {
+                    ...filters.interaction.viewed_duration,
+                    enabled: e.target.checked
+                  })}
+                  className="mr-2 w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                />
+                <Clock className="mr-2 text-yellow-500" size={16} />
+                <span className="text-sm font-medium text-gray-700">Viewing Duration (seconds)</span>
+              </label>
+              {filters.interaction.viewed_duration.enabled && (
+                <div className="ml-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.interaction.viewed_duration.min}
+                      onChange={(e) => updateFilters('interaction', 'viewed_duration', {
+                        ...filters.interaction.viewed_duration,
+                        min: parseInt(e.target.value) || 0
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      placeholder="120"
+                      value={filters.interaction.viewed_duration.max}
+                      onChange={(e) => updateFilters('interaction', 'viewed_duration', {
+                        ...filters.interaction.viewed_duration,
+                        max: parseInt(e.target.value) || 120
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">sec</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-600 h-2 rounded-full" 
+                      style={{ width: `${(filters.interaction.viewed_duration.max / 120) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Comparison Count */}
+            <div>
+              <label className="flex items-center mb-3">
+                <input
+                  type="checkbox"
+                  checked={filters.interaction.comparison_count.enabled}
+                  onChange={(e) => updateFilters('interaction', 'comparison_count', {
+                    ...filters.interaction.comparison_count,
+                    enabled: e.target.checked
+                  })}
+                  className="mr-2 w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                />
+                <TrendingUp className="mr-2 text-indigo-500" size={16} />
+                <span className="text-sm font-medium text-gray-700">Comparison Count</span>
+              </label>
+              {filters.interaction.comparison_count.enabled && (
+                <div className="ml-6">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.interaction.comparison_count.min}
+                      onChange={(e) => updateFilters('interaction', 'comparison_count', {
+                        ...filters.interaction.comparison_count,
+                        min: parseInt(e.target.value) || 0
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      placeholder="10"
+                      value={filters.interaction.comparison_count.max}
+                      onChange={(e) => updateFilters('interaction', 'comparison_count', {
+                        ...filters.interaction.comparison_count,
+                        max: parseInt(e.target.value) || 10
+                      })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-indigo-600 h-2 rounded-full" 
+                      style={{ width: `${(filters.interaction.comparison_count.max / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Customer Persona Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <button
+          onClick={() => toggleSection('persona')}
+          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+        >
+          <div className="flex items-center">
+            <Activity className="mr-2 text-pink-600" size={18} />
+            <span>Customer Persona</span>
+          </div>
+          <span className={`transform transition-transform ${expandedSections.persona ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </button>
+        {expandedSections.persona && (
+          <div className="p-4 space-y-4 bg-white">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Customer Persona Types</label>
+              <div className="relative">
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none bg-white"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newPersonas = [...filters.persona];
+                      if (!newPersonas.includes(e.target.value)) {
+                        newPersonas.push(e.target.value);
+                        updateFilters('persona', '', newPersonas);
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Select customer personas</option>
+                  <option value="Tech-Savvy">Tech-Savvy</option>
+                  <option value="Family-Oriented">Family-Oriented</option>
+                  <option value="Investment-Savvy">Investment-Savvy</option>
+                  <option value="Security-Conscious">Security-Conscious</option>
+                  <option value="Budget-Conscious">Budget-Conscious</option>
+                  <option value="Career-Focused">Career-Focused</option>
+                  <option value="Health-Conscious">Health-Conscious</option>
+                  <option value="Wealth-Builder">Wealth-Builder</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              {filters.persona.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.persona.map(persona => (
+                    <span key={persona} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-pink-100 text-pink-800">
+                      {persona}
+                      <button
+                        onClick={() => {
+                          const newPersonas = filters.persona.filter(p => p !== persona);
+                          updateFilters('persona', '', newPersonas);
+                        }}
+                        className="ml-1 text-pink-600 hover:text-pink-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -335,7 +831,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       <div className="pt-4 border-t border-gray-200">
         <button
           onClick={() => setShowSaveDialog(true)}
-          className="w-full bg-violet-600 text-white py-2 px-4 rounded-lg hover:bg-violet-700 flex items-center justify-center"
+          className="w-full bg-violet-600 text-white py-3 px-4 rounded-lg hover:bg-violet-700 flex items-center justify-center transition-colors font-medium"
         >
           <Save size={16} className="mr-2" />
           Save as Preset

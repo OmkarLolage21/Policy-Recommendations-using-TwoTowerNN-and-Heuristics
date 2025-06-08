@@ -1,4 +1,4 @@
-interface Policy {
+export interface Policy {
   policy_id: string;
   policy_name: string;
   policy_type: string;
