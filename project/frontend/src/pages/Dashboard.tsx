@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, PieChart, LineChart } from '../components/dashboard/Charts';
+import AreaChart from '../components/dashboard/AreaChart';
+import DonutChart from '../components/dashboard/DonutChart';
+import DotChart from '../components/dashboard/DotChart';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
 import TrackingInsights from '../components/dashboard/TrackingInsights';
 import Navbar from '../components/NavBar';
@@ -49,7 +52,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [timeRange]);
@@ -65,6 +67,103 @@ const Dashboard = () => {
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(value);
+  };
+
+  // Sample data for new charts with SBI Life theme colors
+  const sbiColors = {
+    primary: '#46166B',
+    secondary: '#E31E54',
+    tertiary: '#007DC5',
+    light: '#F5F3F7',
+    gradients: {
+      purple: 'rgba(70, 22, 107, 0.8)',
+      pink: 'rgba(227, 30, 84, 0.8)',
+      blue: 'rgba(0, 125, 197, 0.8)',
+      purpleLight: 'rgba(70, 22, 107, 0.2)',
+      pinkLight: 'rgba(227, 30, 84, 0.2)',
+      blueLight: 'rgba(0, 125, 197, 0.2)'
+    }
+  };
+
+  const claimsAreaData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [
+      {
+        label: 'Claims Opened',
+        data: [120, 145, 168, 184, 212, 195],
+        backgroundColor: sbiColors.gradients.purpleLight,
+        borderColor: sbiColors.primary,
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'Claims Settled',
+        data: [100, 130, 155, 170, 190, 185],
+        backgroundColor: sbiColors.gradients.pinkLight,
+        borderColor: sbiColors.secondary,
+        fill: true,
+        tension: 0.4
+      }
+    ]
+  };
+
+  const policyTypeDonutData = {
+    labels: ['Term Insurance', 'Health Insurance', 'ULIP', 'Endowment', 'Money Back'],
+    datasets: [
+      {
+        label: 'Policy Distribution',
+        data: [35, 25, 20, 15, 5],
+        backgroundColor: [
+          sbiColors.primary,
+          sbiColors.secondary,
+          sbiColors.tertiary,
+          sbiColors.gradients.purple,
+          sbiColors.gradients.pink
+        ],
+        borderColor: [
+          sbiColors.primary,
+          sbiColors.secondary,
+          sbiColors.tertiary,
+          sbiColors.primary,
+          sbiColors.secondary
+        ],
+        borderWidth: 2
+      }
+    ]
+  };
+
+  const customerEngagementDotData = {
+    datasets: [
+      {
+        label: 'Customer Engagement',
+        data: [
+          { x: 25, y: 85 },
+          { x: 35, y: 92 },
+          { x: 45, y: 78 },
+          { x: 55, y: 88 },
+          { x: 30, y: 95 },
+          { x: 40, y: 82 },
+          { x: 50, y: 90 }
+        ],
+        backgroundColor: sbiColors.secondary,
+        borderColor: sbiColors.primary,
+        pointRadius: 8
+      }
+    ]
+  };
+
+  const premiumTrendAreaData = {
+    labels: ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024', 'Q2 2024'],
+    datasets: [
+      {
+        label: 'Premium Collection (Crores)',
+        data: [450, 520, 480, 650, 580, 720],
+        backgroundColor: sbiColors.gradients.blueLight,
+        borderColor: sbiColors.tertiary,
+        fill: true,
+        tension: 0.4
+      }
+    ]
   };
 
   if (loading && !data.metrics) {
@@ -189,15 +288,89 @@ const Dashboard = () => {
         {/* Tracking Insights */}
         <div className="mb-8">
           <TrackingInsights 
-  recentActivities={data.recent_activities || []}
-  topPolicies={data.top_policies || []}
-/>
+            recentActivities={data.recent_activities || []}
+            topPolicies={data.top_policies || []}
+          />
         </div>
 
-        {/* Charts Section */}
+        {/* Charts Section - Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Claims Trend</h2>
+            <div className="h-80">
+              <AreaChart 
+                data={claimsAreaData}
+                title="Monthly Claims Overview"
+              />
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Policy Type Distribution</h2>
+            <div className="h-80">
+              <DonutChart 
+                data={policyTypeDonutData}
+                title="Active Policies by Type"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section - Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Policy Performance</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Premium Collection Trend</h2>
+            <div className="h-80">
+              <AreaChart 
+                data={premiumTrendAreaData}
+                title="Quarterly Premium Collection"
+              />
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Customer Engagement</h2>
+            <div className="h-80">
+              <DotChart 
+                data={customerEngagementDotData}
+                title="Age vs Engagement Score"
+                options={{
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: 'Age',
+                        color: '#374151',
+                        font: {
+                          family: 'Inter, sans-serif',
+                          size: 12,
+                          weight: 'bold'
+                        }
+                      }
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: 'Engagement Score',
+                        color: '#374151',
+                        font: {
+                          family: 'Inter, sans-serif',
+                          size: 12,
+                          weight: 'bold'
+                        }
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Original Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Policy Performance</h2>
             {data.policy_performance ? (
               <div className="h-80">
                 <BarChart data={data.policy_performance} />
@@ -213,7 +386,7 @@ const Dashboard = () => {
           </div>
           
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Customer Segments</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Customer Segments</h2>
             {data.customer_segments ? (
               <div className="h-80">
                 <PieChart data={data.customer_segments} />
@@ -232,7 +405,7 @@ const Dashboard = () => {
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Sales Trend</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Sales Trend</h2>
             {data.sales_trend ? (
               <div className="h-64">
                 <LineChart data={data.sales_trend} />
@@ -248,7 +421,7 @@ const Dashboard = () => {
           </div>
           
           <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Recent Customer Activity</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Customer Activity</h2>
             <div className="h-64 overflow-y-auto">
               {data.recent_activities ? (
                 <RecentActivity activities={data.recent_activities} />

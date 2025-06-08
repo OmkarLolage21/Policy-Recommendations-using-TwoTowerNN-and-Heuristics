@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, List, Filter, Users, AlertTriangle, TrendingUp, Target } from 'lucide-react';
+import { Grid, List, Filter, Users, AlertTriangle, TrendingUp, Target, Plus, Edit, Trash2, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import PolicyPromotionCard from '../components/promotion/PolicyPromotionCard';
@@ -13,9 +13,35 @@ const PolicyPromotion: React.FC = () => {
   const [selectedPolicies, setSelectedPolicies] = useState<Policy[]>([]);
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<FilterPreset | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showCreatePreset, setShowCreatePreset] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
+  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetDescription, setNewPresetDescription] = useState('');
+  const [newPresetFilters, setNewPresetFilters] = useState<FilterState>({
+    demographic: {
+      age: { min: 18, max: 65, enabled: false },
+      gender: [],
+      income_bracket: [],
+      employment_status: [],
+      marital_status: [],
+      location_city: [],
+    },
+    policy: {
+      policy_ownership_count: { min: 0, max: 5, enabled: false },
+      last_policy_purchase: { from: '', to: '', enabled: false },
+      credit_score: { min: 300, max: 900, enabled: false },
+      preferred_policy_type: [],
+    },
+    interaction: {
+      clicked: null,
+      purchased: null,
+      abandoned_cart: null,
+      viewed_duration: { min: 0, max: 120, enabled: false },
+      comparison_count: { min: 0, max: 10, enabled: false },
+    },
+    persona: [],
+  });
 
   useEffect(() => {
     fetchPolicies();
@@ -43,7 +69,7 @@ const PolicyPromotion: React.FC = () => {
         keywords: policy.keywords ? 
           policy.keywords.split(',').map((s: string) => s.trim()) : 
           [],
-        score: Math.floor(Math.random() * 40) + 60, // Mock score 60-100
+        score: Math.floor(Math.random() * 40) + 60,
         selected_for_promotion: false
       }));
 
@@ -186,8 +212,11 @@ const PolicyPromotion: React.FC = () => {
   };
 
   const handlePresetEdit = (preset: FilterPreset) => {
-    setShowFilters(true);
     setSelectedPreset(preset);
+    setNewPresetName(preset.name);
+    setNewPresetDescription(preset.description || '');
+    setNewPresetFilters(preset.filters);
+    setShowCreatePreset(true);
   };
 
   const handlePresetDelete = (presetId: string) => {
@@ -197,11 +226,14 @@ const PolicyPromotion: React.FC = () => {
     }
   };
 
-  const handleSavePreset = (name: string, filters: FilterState) => {
+  const handleCreatePreset = () => {
+    if (!newPresetName.trim()) return;
+
     const newPreset: FilterPreset = {
       id: uuidv4(),
-      name,
-      filters,
+      name: newPresetName.trim(),
+      description: newPresetDescription.trim(),
+      filters: newPresetFilters,
       selected_policies: selectedPolicies,
       created_at: new Date().toISOString(),
       target_customer_count: Math.floor(Math.random() * 10000) + 1000,
@@ -209,30 +241,41 @@ const PolicyPromotion: React.FC = () => {
     };
 
     setFilterPresets(prev => [...prev, newPreset]);
-  };
-
-  const handleFilterChange = (filters: FilterState) => {
-    if (selectedPreset) {
-      setFilterPresets(prev =>
-        prev.map(p =>
-          p.id === selectedPreset.id
-            ? { ...p, filters }
-            : p
-        )
-      );
-      setSelectedPreset(prev => prev ? { ...prev, filters } : null);
-    }
+    setShowCreatePreset(false);
+    setNewPresetName('');
+    setNewPresetDescription('');
+    setNewPresetFilters({
+      demographic: {
+        age: { min: 18, max: 65, enabled: false },
+        gender: [],
+        income_bracket: [],
+        employment_status: [],
+        marital_status: [],
+        location_city: [],
+      },
+      policy: {
+        policy_ownership_count: { min: 0, max: 5, enabled: false },
+        last_policy_purchase: { from: '', to: '', enabled: false },
+        credit_score: { min: 300, max: 900, enabled: false },
+        preferred_policy_type: [],
+      },
+      interaction: {
+        clicked: null,
+        purchased: null,
+        abandoned_cart: null,
+        viewed_duration: { min: 0, max: 120, enabled: false },
+        comparison_count: { min: 0, max: 10, enabled: false },
+      },
+      persona: [],
+    });
   };
 
   const getFilteredPolicies = () => {
     if (!selectedPreset) return policies;
     
-    // Apply filters based on selected preset
-    // This is a simplified implementation - in a real app, you'd filter based on customer data
     return policies.filter(policy => {
       const filters = selectedPreset.filters;
       
-      // Filter by policy type if specified
       if (filters.policy.preferred_policy_type.length > 0) {
         return filters.policy.preferred_policy_type.includes(policy.policy_type);
       }
@@ -247,221 +290,298 @@ const PolicyPromotion: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Navbar userType="admin" />
       
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
-        <header className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-extrabold text-violet-700 mb-2">
-              Policy Promotion Management
-            </h1>
-            <p className="text-gray-600">Create targeted campaigns and manage policy promotions</p>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 mt-4 md:mt-0">
-            <button
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center shadow-sm transition-colors ${
-                showFilters 
-                  ? 'bg-violet-600 text-white' 
-                  : 'bg-white text-violet-700 border border-violet-200 hover:bg-violet-50'
-              }`}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter size={16} className="mr-1.5" /> 
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
+      <div className="flex h-screen pt-16">
+        {/* Left Sidebar - Presets */}
+        <div className="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Filter Presets</h2>
+              <button
+                onClick={() => setShowCreatePreset(true)}
+                className="bg-violet-600 text-white p-2 rounded-lg hover:bg-violet-700 transition-colors"
+                title="Create New Preset"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
             
-            <div className="flex rounded-lg overflow-hidden shadow-sm border border-gray-200">
-              <button
-                className={`px-3 py-1.5 flex items-center text-sm ${
-                  viewMode === 'grid' 
-                    ? 'bg-violet-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid size={16} className="mr-1" /> Grid
-              </button>
-              <button
-                className={`px-3 py-1.5 flex items-center text-sm ${
-                  viewMode === 'list' 
-                    ? 'bg-violet-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => setViewMode('list')}
-              >
-                <List size={16} className="mr-1" /> List
-              </button>
-            </div>
+            {selectedPreset && (
+              <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-violet-800">
+                      Active: {selectedPreset.name}
+                    </h3>
+                    <p className="text-xs text-violet-600">
+                      {filteredPolicies.length} policies match
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPreset(null)}
+                    className="text-violet-600 hover:text-violet-800"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </header>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm text-gray-500 mb-1">Total Policies</h3>
-                <p className="text-2xl font-bold text-gray-800">{policies.length}</p>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {filterPresets.map(preset => (
+              <div
+                key={preset.id}
+                className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                  selectedPreset?.id === preset.id
+                    ? 'border-violet-500 bg-violet-50'
+                    : 'border-gray-200 hover:border-violet-300 hover:bg-gray-50'
+                }`}
+                onClick={() => handlePresetSelect(preset)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 text-sm">{preset.name}</h3>
+                    {preset.description && (
+                      <p className="text-xs text-gray-600 mt-1">{preset.description}</p>
+                    )}
+                  </div>
+                  <div className="flex space-x-1 ml-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePresetEdit(preset);
+                      }}
+                      className="p-1 text-gray-400 hover:text-violet-600 rounded"
+                    >
+                      <Edit size={12} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePresetDelete(preset.id);
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-600 rounded"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500">
+                    {preset.target_customer_count?.toLocaleString()} customers
+                  </span>
+                  {preset.is_active && (
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </div>
               </div>
-              <Target className="text-blue-500" size={24} />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm text-gray-500 mb-1">Selected for Promotion</h3>
-                <p className="text-2xl font-bold text-violet-700">
-                  {policies.filter(p => p.selected_for_promotion).length}
-                </p>
-              </div>
-              <TrendingUp className="text-violet-500" size={24} />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm text-gray-500 mb-1">Active Presets</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  {filterPresets.filter(p => p.is_active).length}
-                </p>
-              </div>
-              <Filter className="text-blue-500" size={24} />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm text-gray-500 mb-1">Target Customers</h3>
-                <p className="text-2xl font-bold text-amber-600">
-                  {selectedPreset?.target_customer_count?.toLocaleString() || '0'}
-                </p>
-              </div>
-              <Users className="text-amber-500" size={24} />
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className={`grid grid-cols-1 ${showFilters ? 'lg:grid-cols-[320px,1fr]' : ''} gap-6`}>
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="lg:sticky lg:top-6 lg:self-start space-y-4">
-              <FilterPanel
-                filters={selectedPreset?.filters || {
-                  demographic: {
-                    age: { min: 18, max: 65, enabled: false },
-                    gender: [],
-                    income_bracket: [],
-                    employment_status: [],
-                    marital_status: [],
-                    location_city: [],
-                  },
-                  policy: {
-                    policy_ownership_count: { min: 0, max: 5, enabled: false },
-                    last_policy_purchase: { from: '', to: '', enabled: false },
-                    credit_score: { min: 300, max: 900, enabled: false },
-                    preferred_policy_type: [],
-                  },
-                  interaction: {
-                    clicked: null,
-                    purchased: null,
-                    abandoned_cart: null,
-                    viewed_duration: { min: 0, max: 120, enabled: false },
-                    comparison_count: { min: 0, max: 10, enabled: false },
-                  },
-                  persona: [],
-                }}
-                onFilterChange={handleFilterChange}
-                presets={filterPresets}
-                onSavePreset={handleSavePreset}
-                onLoadPreset={handlePresetSelect}
-                onDeletePreset={handlePresetDelete}
-              />
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-violet-700">Policy Promotion Management</h1>
+                <p className="text-gray-600">Create targeted campaigns and manage policy promotions</p>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="flex rounded-lg overflow-hidden shadow-sm border border-gray-200">
+                  <button
+                    className={`px-3 py-2 flex items-center text-sm ${
+                      viewMode === 'grid' 
+                        ? 'bg-violet-600 text-white' 
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <Grid size={16} className="mr-1" /> Grid
+                  </button>
+                  <button
+                    className={`px-3 py-2 flex items-center text-sm ${
+                      viewMode === 'list' 
+                        ? 'bg-violet-600 text-white' 
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List size={16} className="mr-1" /> List
+                  </button>
+                </div>
+              </div>
+            </div>
 
-              {selectedPreset && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 mr-2 mt-0.5" />
-                    <div>
-                      <h3 className="text-sm font-medium text-amber-800">
-                        Active Preset: {selectedPreset.name}
-                      </h3>
-                      <p className="text-xs text-amber-600 mt-1">
-                        Showing {filteredPolicies.length} policies matching this preset
-                      </p>
-                    </div>
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm text-blue-600 mb-1">Total Policies</h3>
+                    <p className="text-2xl font-bold text-blue-800">{policies.length}</p>
                   </div>
+                  <Target className="text-blue-500" size={24} />
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-violet-50 to-violet-100 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm text-violet-600 mb-1">Promoted</h3>
+                    <p className="text-2xl font-bold text-violet-800">
+                      {policies.filter(p => p.selected_for_promotion).length}
+                    </p>
+                  </div>
+                  <TrendingUp className="text-violet-500" size={24} />
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm text-green-600 mb-1">Active Presets</h3>
+                    <p className="text-2xl font-bold text-green-800">
+                      {filterPresets.filter(p => p.is_active).length}
+                    </p>
+                  </div>
+                  <Filter className="text-green-500" size={24} />
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm text-amber-600 mb-1">Target Customers</h3>
+                    <p className="text-2xl font-bold text-amber-800">
+                      {selectedPreset?.target_customer_count?.toLocaleString() || '0'}
+                    </p>
+                  </div>
+                  <Users className="text-amber-500" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Policies Grid */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Available Policies
+                {selectedPreset && (
+                  <span className="text-sm font-normal text-gray-600 ml-2">
+                    ({filteredPolicies.length} matching "{selectedPreset.name}")
+                  </span>
+                )}
+              </h2>
+              {selectedPolicies.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  {selectedPolicies.length} selected
                 </div>
               )}
             </div>
-          )}
-
-          {/* Main Content */}
-          <div>
-            {/* Filter Presets Grid */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Filter Presets</h2>
+            
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-700 mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading policies...</p>
+              </div>
+            ) : (
               <div className={`grid ${
                 viewMode === 'grid' 
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
                   : 'grid-cols-1'
               } gap-4`}>
-                {filterPresets.map(preset => (
-                  <FilterPresetCard
-                    key={preset.id}
-                    preset={preset}
-                    selected={selectedPreset?.id === preset.id}
-                    onSelect={handlePresetSelect}
-                    onEdit={handlePresetEdit}
-                    onDelete={handlePresetDelete}
+                {filteredPolicies.map(policy => (
+                  <PolicyPromotionCard
+                    key={policy.policy_id}
+                    policy={policy}
+                    selected={selectedPolicies.some(p => p.policy_id === policy.policy_id)}
+                    onSelect={handlePolicySelect}
+                    onPromote={handlePolicyPromote}
+                    viewMode={viewMode}
                   />
                 ))}
               </div>
-            </div>
-
-            {/* Policies Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Available Policies
-                  {selectedPreset && (
-                    <span className="text-sm font-normal text-gray-600 ml-2">
-                      ({filteredPolicies.length} matching "{selectedPreset.name}")
-                    </span>
-                  )}
-                </h2>
-                {selectedPolicies.length > 0 && (
-                  <div className="text-sm text-gray-600">
-                    {selectedPolicies.length} selected
-                  </div>
-                )}
-              </div>
-              
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-700 mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading policies...</p>
-                </div>
-              ) : (
-                <div className={`grid ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                } gap-4`}>
-                  {filteredPolicies.map(policy => (
-                    <PolicyPromotionCard
-                      key={policy.policy_id}
-                      policy={policy}
-                      selected={selectedPolicies.some(p => p.policy_id === policy.policy_id)}
-                      onSelect={handlePolicySelect}
-                      onPromote={handlePolicyPromote}
-                      viewMode={viewMode}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Create Preset Modal */}
+      {showCreatePreset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Create New Preset</h3>
+                <button
+                  onClick={() => setShowCreatePreset(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preset Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newPresetName}
+                    onChange={(e) => setNewPresetName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    placeholder="Enter preset name..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={newPresetDescription}
+                    onChange={(e) => setNewPresetDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    rows={3}
+                    placeholder="Enter preset description..."
+                  />
+                </div>
+              </div>
+
+              <FilterPanel
+                filters={newPresetFilters}
+                onFilterChange={setNewPresetFilters}
+                presets={[]}
+                onSavePreset={() => {}}
+                onLoadPreset={() => {}}
+                onDeletePreset={() => {}}
+              />
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreatePreset(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePreset}
+                disabled={!newPresetName.trim()}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+              >
+                Create Preset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
