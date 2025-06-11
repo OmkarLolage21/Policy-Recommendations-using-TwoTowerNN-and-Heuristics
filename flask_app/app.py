@@ -380,17 +380,36 @@ def promote_policies():
         cursor = conn.cursor()
         
         for policy_id in policy_ids:
+            # First check if policy is already promoted
             cursor.execute('''
-                INSERT INTO promoted_policies 
-                (policy_id, preset_id, promotion_name, start_date, end_date, priority, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                policy_id, preset_id, promotion_name, start_date, end_date, 
-                priority, True, datetime.now().isoformat()
-            ))
+                SELECT id FROM promoted_policies 
+                WHERE policy_id = ? AND is_active = 1
+            ''', (policy_id,))
+            
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing promotion
+                cursor.execute('''
+                    UPDATE promoted_policies 
+                    SET promotion_name = ?, start_date = ?, end_date = ?, priority = ?
+                    WHERE policy_id = ? AND is_active = 1
+                ''', (promotion_name, start_date, end_date, priority, policy_id))
+            else:
+                # Insert new promotion
+                cursor.execute('''
+                    INSERT INTO promoted_policies 
+                    (policy_id, preset_id, promotion_name, start_date, end_date, priority, is_active, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    policy_id, preset_id, promotion_name, start_date, end_date, 
+                    priority, True, datetime.now().isoformat()
+                ))
         
         conn.commit()
         conn.close()
+        
+        print(f"✅ Successfully promoted {len(policy_ids)} policies: {policy_ids}")
         
         return jsonify({'message': f'Successfully promoted {len(policy_ids)} policies'})
         
@@ -811,6 +830,28 @@ def checkout_cart():
         print(f"Error during checkout: {e}")
         return jsonify({'error': str(e)}), 500
 
+def get_promoted_policy_ids():
+    """Helper function to get currently promoted policy IDs"""
+    try:
+        conn = sqlite3.connect('tracking.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT policy_id, priority, promotion_name
+            FROM promoted_policies 
+            WHERE is_active = 1 AND date(end_date) >= date('now')
+            ORDER BY priority DESC
+        ''')
+        
+        promoted_policies = cursor.fetchall()
+        conn.close()
+        
+        return {str(p[0]): {'priority': p[1], 'promotion_name': p[2]} for p in promoted_policies}
+        
+    except Exception as e:
+        print(f"Error getting promoted policies: {e}")
+        return {}
+
 @app.route('/recommend_policies', methods=['GET'])
 def recommend_policies():
     """Get recommended policies for a customer with promoted policies prioritized"""
@@ -821,20 +862,10 @@ def recommend_policies():
             return jsonify([])
         
         # Get promoted policies
-        conn = sqlite3.connect('tracking.db')
-        cursor = conn.cursor()
+        promoted_policy_data = get_promoted_policy_ids()
+        promoted_policy_ids = list(promoted_policy_data.keys())
         
-        cursor.execute('''
-            SELECT policy_id, priority
-            FROM promoted_policies 
-            WHERE is_active = 1 AND date(end_date) >= date('now')
-            ORDER BY priority DESC
-        ''')
-        
-        promoted_policies = cursor.fetchall()
-        conn.close()
-        
-        promoted_policy_ids = [str(p[0]) for p in promoted_policies]
+        print(f"🎯 Promoted policies: {promoted_policy_ids}")
         
         # Simple recommendation based on customer profile
         customer_row = customers_df[customers_df['customer_id'] == int(customer_id)]
@@ -860,16 +891,27 @@ def recommend_policies():
             else:
                 recommended = policies_df.sample(n=min(6, len(policies_df))).to_dict('records')
         
-        # Mark promoted policies
+        # Mark promoted policies and add promotion data
         for policy in recommended:
-            if str(policy['policy_id']) in promoted_policy_ids:
+            policy_id_str = str(policy['policy_id'])
+            if policy_id_str in promoted_policy_ids:
                 policy['is_promoted'] = True
-                policy['promotion_tag'] = 'Featured'
+                policy['promotion_tag'] = promoted_policy_data[policy_id_str]['promotion_name']
+                policy['promotion_priority'] = promoted_policy_data[policy_id_str]['priority']
+                print(f"✅ Marked policy {policy_id_str} as promoted with tag: {policy['promotion_tag']}")
             else:
                 policy['is_promoted'] = False
+                policy['promotion_tag'] = None
+                policy['promotion_priority'] = 0
         
-        # Sort to put promoted policies first
-        recommended.sort(key=lambda x: (not x.get('is_promoted', False), x.get('policy_id', 0)))
+        # Sort to put promoted policies first (by priority, then by policy_id)
+        recommended.sort(key=lambda x: (
+            not x.get('is_promoted', False),  # Promoted first
+            -x.get('promotion_priority', 0),  # Higher priority first
+            x.get('policy_id', 0)  # Then by policy ID
+        ))
+        
+        print(f"📋 Returning {len(recommended)} recommendations, promoted count: {sum(1 for p in recommended if p.get('is_promoted'))}")
         
         return jsonify(recommended)
         
@@ -900,27 +942,27 @@ def search_policies():
             all_policies = policies_df[mask].to_dict('records')
         
         # Get promoted policies
-        conn = sqlite3.connect('tracking.db')
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT policy_id, priority
-            FROM promoted_policies 
-            WHERE is_active = 1 AND date(end_date) >= date('now')
-        ''')
-        
-        promoted_policies = cursor.fetchall()
-        conn.close()
-        
-        promoted_policy_ids = [str(p[0]) for p in promoted_policies]
+        promoted_policy_data = get_promoted_policy_ids()
+        promoted_policy_ids = list(promoted_policy_data.keys())
         
         # Mark promoted policies
         for policy in all_policies:
-            if str(policy['policy_id']) in promoted_policy_ids:
+            policy_id_str = str(policy['policy_id'])
+            if policy_id_str in promoted_policy_ids:
                 policy['is_promoted'] = True
-                policy['promotion_tag'] = 'Featured'
+                policy['promotion_tag'] = promoted_policy_data[policy_id_str]['promotion_name']
+                policy['promotion_priority'] = promoted_policy_data[policy_id_str]['priority']
             else:
                 policy['is_promoted'] = False
+                policy['promotion_tag'] = None
+                policy['promotion_priority'] = 0
+        
+        # Sort promoted policies first
+        all_policies.sort(key=lambda x: (
+            not x.get('is_promoted', False),
+            -x.get('promotion_priority', 0),
+            x.get('policy_id', 0)
+        ))
         
         return jsonify(all_policies)
         
