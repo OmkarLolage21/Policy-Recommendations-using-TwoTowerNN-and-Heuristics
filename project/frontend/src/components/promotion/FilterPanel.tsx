@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Save, Filter, X, Plus, Users, Target, Activity, BarChart3, TrendingUp, Eye, MousePointer, ShoppingCart, Clock, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Filter, X, Plus, Users, Target, Activity, BarChart3, TrendingUp, Eye, MousePointer, ShoppingCart, Clock, RotateCcw, Settings } from 'lucide-react';
 import { FilterState, FilterPreset } from '../../types/promotion';
+import CustomFilterModal from './CustomFilterModal';
 
 interface FilterPanelProps {
   filters: FilterState;
@@ -21,12 +22,72 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [presetName, setPresetName] = useState('');
+  const [customFilters, setCustomFilters] = useState<any[]>([]);
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     demographic: true,
     policy: true,
     interaction: true,
-    persona: true
+    persona: true,
+    custom: true
   });
+
+  // Load custom filters on component mount
+  useEffect(() => {
+    fetchCustomFilters();
+  }, []);
+
+  const fetchCustomFilters = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/custom_filters');
+      const data = await response.json();
+      setCustomFilters(data);
+    } catch (error) {
+      console.error('Error fetching custom filters:', error);
+    }
+  };
+
+  const handleCreateCustomFilter = async (filterData: any) => {
+    try {
+      const response = await fetch('http://localhost:5000/custom_filters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(filterData),
+      });
+
+      if (response.ok) {
+        fetchCustomFilters(); // Refresh the list
+        alert('Custom filter created successfully!');
+      } else {
+        alert('Failed to create custom filter');
+      }
+    } catch (error) {
+      console.error('Error creating custom filter:', error);
+      alert('Error creating custom filter');
+    }
+  };
+
+  const handleDeleteCustomFilter = async (filterId: number) => {
+    if (!confirm('Are you sure you want to delete this custom filter?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/custom_filters/${filterId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchCustomFilters(); // Refresh the list
+        alert('Custom filter deleted successfully!');
+      } else {
+        alert('Failed to delete custom filter');
+      }
+    } catch (error) {
+      console.error('Error deleting custom filter:', error);
+      alert('Error deleting custom filter');
+    }
+  };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -166,48 +227,48 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
             {/* Gender */}
             <div>
-  <label className="text-sm font-medium text-gray-700 mb-3 block">Gender</label>
-  <div className="flex flex-wrap gap-2 mt-2">
-    {['Male', 'Female', 'Other'].map(gender => (
-      <button
-        key={gender}
-        type="button"
-        onClick={() => {
-          const isSelected = filters.demographic.gender.includes(gender);
-          const newGenders = isSelected
-            ? filters.demographic.gender.filter(g => g !== gender)
-            : [...filters.demographic.gender, gender];
-          updateFilters('demographic', 'gender', newGenders);
-        }}
-        className={`px-3 py-2 rounded-lg text-sm border ${
-          filters.demographic.gender.includes(gender)
-            ? 'bg-violet-100 border-violet-500 text-violet-800'
-            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
-      >
-        {gender}
-      </button>
-    ))}
-  </div>
-  {filters.demographic.gender.length > 0 && (
-    <div className="mt-2 flex flex-wrap gap-1">
-      {filters.demographic.gender.map(gender => (
-        <span key={gender} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-violet-100 text-violet-800">
-          {gender}
-          <button
-            onClick={() => {
-              const newGenders = filters.demographic.gender.filter(g => g !== gender);
-              updateFilters('demographic', 'gender', newGenders);
-            }}
-            className="ml-1 text-violet-600 hover:text-violet-800"
-          >
-            ×
-          </button>
-        </span>
-      ))}
-    </div>
-  )}
-</div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Gender</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {['Male', 'Female', 'Other'].map(gender => (
+                  <button
+                    key={gender}
+                    type="button"
+                    onClick={() => {
+                      const isSelected = filters.demographic.gender.includes(gender);
+                      const newGenders = isSelected
+                        ? filters.demographic.gender.filter(g => g !== gender)
+                        : [...filters.demographic.gender, gender];
+                      updateFilters('demographic', 'gender', newGenders);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-sm border ${
+                      filters.demographic.gender.includes(gender)
+                        ? 'bg-violet-100 border-violet-500 text-violet-800'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {gender}
+                  </button>
+                ))}
+              </div>
+              {filters.demographic.gender.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {filters.demographic.gender.map(gender => (
+                    <span key={gender} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-violet-100 text-violet-800">
+                      {gender}
+                      <button
+                        onClick={() => {
+                          const newGenders = filters.demographic.gender.filter(g => g !== gender);
+                          updateFilters('demographic', 'gender', newGenders);
+                        }}
+                        className="ml-1 text-violet-600 hover:text-violet-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Income Bracket */}
             <div>
@@ -827,6 +888,78 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         )}
       </div>
 
+      {/* Custom Filters Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <button
+          onClick={() => toggleSection('custom')}
+          className="w-full p-4 text-left font-medium bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+        >
+          <div className="flex items-center">
+            <Settings className="mr-2 text-orange-600" size={18} />
+            <span>Custom Filters</span>
+          </div>
+          <span className={`transform transition-transform ${expandedSections.custom ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </button>
+        {expandedSections.custom && (
+          <div className="p-4 space-y-4 bg-white">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-gray-700">Available Custom Filters</h4>
+              <button
+                onClick={() => setShowCustomFilterModal(true)}
+                className="flex items-center text-sm text-violet-600 hover:text-violet-700"
+              >
+                <Plus size={16} className="mr-1" />
+                Create Filter
+              </button>
+            </div>
+
+            {customFilters.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <Settings className="mx-auto mb-2" size={32} />
+                <p>No custom filters created yet</p>
+                <button
+                  onClick={() => setShowCustomFilterModal(true)}
+                  className="mt-2 text-violet-600 hover:text-violet-700 text-sm"
+                >
+                  Create your first custom filter
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {customFilters.map((filter) => (
+                  <div key={filter.id} className="border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium text-gray-900">{filter.filter_name}</h5>
+                      <button
+                        onClick={() => handleDeleteCustomFilter(filter.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-2">Type: {filter.filter_type}</p>
+                    {filter.filter_options.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {filter.filter_options.slice(0, 3).map((option: string, index: number) => (
+                          <span key={index} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                            {option}
+                          </span>
+                        ))}
+                        {filter.filter_options.length > 3 && (
+                          <span className="text-xs text-gray-500">+{filter.filter_options.length - 3} more</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Save Preset */}
       <div className="pt-4 border-t border-gray-200">
         <button
@@ -869,6 +1002,13 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           </div>
         </div>
       )}
+
+      {/* Custom Filter Modal */}
+      <CustomFilterModal
+        isOpen={showCustomFilterModal}
+        onClose={() => setShowCustomFilterModal(false)}
+        onSave={handleCreateCustomFilter}
+      />
     </div>
   );
 };

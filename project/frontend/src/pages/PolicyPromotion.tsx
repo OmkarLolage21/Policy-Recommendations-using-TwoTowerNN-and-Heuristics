@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, List, Filter, Users, TrendingUp, Target, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Grid, List, Filter, Users, TrendingUp, Target, Plus, Edit, Trash2, X, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import PolicyPromotionCard from '../components/promotion/PolicyPromotionCard';
 import FilterPanel from '../components/promotion/FilterPanel';
+import PolicyCreationModal from '../components/promotion/PolicyCreationModal';
 import Navbar from '../components/NavBar';
 import { Policy, FilterPreset, FilterState } from '../types/promotion';
 
@@ -15,6 +16,7 @@ const PolicyPromotion: React.FC = () => {
   const [filterPresets, setFilterPresets] = useState<FilterPreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<FilterPreset | null>(null);
   const [showCreatePreset, setShowCreatePreset] = useState(false);
+  const [showCreatePolicy, setShowCreatePolicy] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [newPresetName, setNewPresetName] = useState('');
@@ -46,7 +48,6 @@ const PolicyPromotion: React.FC = () => {
 
   useEffect(() => {
     fetchPolicies();
-    // loadSamplePresets();
     loadPresets();
   }, []);
 
@@ -78,7 +79,9 @@ const PolicyPromotion: React.FC = () => {
           policy.keywords.split(',').map((s: string) => s.trim()) : 
           [],
         score: Math.floor(Math.random() * 40) + 60,
-        selected_for_promotion: false
+        selected_for_promotion: false,
+        is_promoted: policy.is_promoted || false,
+        promotion_tag: policy.promotion_tag || ''
       }));
 
       setPolicies(transformedPolicies);
@@ -195,10 +198,8 @@ const PolicyPromotion: React.FC = () => {
     setFilterPresets(samplePresets);
   };
 
-
   const loadPresets = () => {
     try {
-      // Try to load presets from localStorage
       const savedPresets = localStorage.getItem(STORAGE_KEY);
       
       if (savedPresets && savedPresets !== 'undefined') {
@@ -210,7 +211,6 @@ const PolicyPromotion: React.FC = () => {
         }
       }
       
-      // If no presets found in localStorage, load sample presets
       loadSamplePresets();
     } catch (error) {
       console.error('Error loading presets from localStorage:', error);
@@ -228,14 +228,61 @@ const PolicyPromotion: React.FC = () => {
     });
   };
 
-  const handlePolicyPromote = (policy: Policy) => {
-    setPolicies(prev => 
-      prev.map(p => 
-        p.policy_id === policy.policy_id 
-          ? { ...p, selected_for_promotion: !p.selected_for_promotion }
-          : p
-      )
-    );
+  const handlePolicyPromote = async (policy: Policy) => {
+    try {
+      const response = await fetch('http://localhost:5000/promote_policies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          policy_ids: [policy.policy_id],
+          preset_id: selectedPreset?.id || 'manual',
+          promotion_name: selectedPreset?.name || 'Manual Promotion',
+          priority: 1
+        }),
+      });
+
+      if (response.ok) {
+        setPolicies(prev => 
+          prev.map(p => 
+            p.policy_id === policy.policy_id 
+              ? { ...p, selected_for_promotion: !p.selected_for_promotion, is_promoted: !p.selected_for_promotion }
+              : p
+          )
+        );
+        alert('Policy promotion status updated successfully!');
+      } else {
+        alert('Failed to update policy promotion status');
+      }
+    } catch (error) {
+      console.error('Error promoting policy:', error);
+      alert('Error updating policy promotion status');
+    }
+  };
+
+  const handleCreatePolicy = async (policyData: any) => {
+    try {
+      const response = await fetch('http://localhost:5000/policies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(policyData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Policy created successfully! Policy ID: ${result.policy_id}`);
+        fetchPolicies(); // Refresh the policies list
+      } else {
+        const error = await response.json();
+        alert(`Failed to create policy: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error creating policy:', error);
+      alert('Error creating policy');
+    }
   };
 
   const handlePresetSelect = (preset: FilterPreset) => {
@@ -251,36 +298,34 @@ const PolicyPromotion: React.FC = () => {
   };
 
   const handleSaveEditedPreset = () => {
-  if (!newPresetName.trim() || !selectedPreset) return;
+    if (!newPresetName.trim() || !selectedPreset) return;
 
-  const updatedPreset: FilterPreset = {
-    ...selectedPreset,
-    name: newPresetName.trim(),
-    description: newPresetDescription.trim(),
-    filters: newPresetFilters,
-    selected_policies: selectedPolicies,
-    created_at: new Date().toISOString(),};
+    const updatedPreset: FilterPreset = {
+      ...selectedPreset,
+      name: newPresetName.trim(),
+      description: newPresetDescription.trim(),
+      filters: newPresetFilters,
+      selected_policies: selectedPolicies,
+      created_at: new Date().toISOString(),
+    };
 
     setFilterPresets(prev => {
-    const updated = prev.map(p => 
-      p.id === selectedPreset.id ? updatedPreset : p
-    );
-    // Update localStorage when a preset is edited
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return updated;
-  });
-  
-  setSelectedPreset(updatedPreset);
-  setShowCreatePreset(false);
-  setNewPresetName('');
-  setNewPresetDescription('');
-  
+      const updated = prev.map(p => 
+        p.id === selectedPreset.id ? updatedPreset : p
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    
+    setSelectedPreset(updatedPreset);
+    setShowCreatePreset(false);
+    setNewPresetName('');
+    setNewPresetDescription('');
   };
 
   const handlePresetDelete = (presetId: string) => {
     setFilterPresets(prev => {
       const updated = prev.filter(p => p.id !== presetId);
-      // Update localStorage when a preset is deleted
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
@@ -306,7 +351,6 @@ const PolicyPromotion: React.FC = () => {
 
     setFilterPresets(prev => {
       const updated = [...prev, newPreset];
-      // Update localStorage when a new preset is created
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
@@ -463,6 +507,15 @@ const PolicyPromotion: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-3">
+                {/* Add Policy Button */}
+                <button
+                  onClick={() => setShowCreatePolicy(true)}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <FileText size={16} className="mr-2" />
+                  Add Policy
+                </button>
+                
                 <div className="flex rounded-lg overflow-hidden shadow-sm border border-gray-200">
                   <button
                     className={`px-3 py-2 flex items-center text-sm ${
@@ -582,21 +635,21 @@ const PolicyPromotion: React.FC = () => {
 
       {/* Create Preset Modal */}
       {showCreatePreset && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold">
-            {selectedPreset ? 'Edit Preset' : 'Create New Preset'}
-          </h3>
-          <button
-            onClick={() => setShowCreatePreset(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
-          </button>
-        </div>
-      </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">
+                  {selectedPreset ? 'Edit Preset' : 'Create New Preset'}
+                </h3>
+                <button
+                  onClick={() => setShowCreatePreset(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
               <div className="space-y-4 mb-6">
@@ -637,23 +690,30 @@ const PolicyPromotion: React.FC = () => {
             </div>
             
             <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-        <button
-          onClick={() => setShowCreatePreset(false)}
-          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={selectedPreset ? handleSaveEditedPreset : handleCreatePreset}
-          disabled={!newPresetName.trim()}
-          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
-        >
-          {selectedPreset ? 'Save Changes' : 'Create Preset'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <button
+                onClick={() => setShowCreatePreset(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={selectedPreset ? handleSaveEditedPreset : handleCreatePreset}
+                disabled={!newPresetName.trim()}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+              >
+                {selectedPreset ? 'Save Changes' : 'Create Preset'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Policy Modal */}
+      <PolicyCreationModal
+        isOpen={showCreatePolicy}
+        onClose={() => setShowCreatePolicy(false)}
+        onSave={handleCreatePolicy}
+      />
     </div>
   );
 };
