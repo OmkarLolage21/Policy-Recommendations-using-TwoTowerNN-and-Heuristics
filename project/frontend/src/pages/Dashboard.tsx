@@ -391,9 +391,9 @@ const Dashboard = () => {
         </div>
 
         {/* Wave Chart - Featured */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <WaveChart title="AI Model Performance Comparison" />
-        </div>
+        </div> */}
 
         {/* Tracking Insights */}
         <div className="mb-8">
