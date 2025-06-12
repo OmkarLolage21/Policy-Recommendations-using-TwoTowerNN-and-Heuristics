@@ -4,6 +4,7 @@ import AreaChart from '../components/dashboard/AreaChart';
 import DonutChart from '../components/dashboard/DonutChart';
 import DotChart from '../components/dashboard/DotChart';
 import WaveChart from '../components/dashboard/WaveChart';
+import SankeyChart from '../components/dashboard/SankeyChart';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
 import TrackingInsights from '../components/dashboard/TrackingInsights';
 import Navbar from '../components/NavBar';
@@ -84,6 +85,51 @@ const Dashboard = () => {
       pinkLight: 'rgba(227, 30, 84, 0.2)',
       blueLight: 'rgba(0, 125, 197, 0.2)'
     }
+  };
+
+  // Customer Journey Sankey Data
+  const customerJourneyData = {
+    nodes: [
+      // Awareness Stage
+      { id: 'website_visitors', name: 'Website Visitors', category: 'awareness' },
+      { id: 'social_media', name: 'Social Media', category: 'awareness' },
+      { id: 'referrals', name: 'Referrals', category: 'awareness' },
+      
+      // Interest Stage
+      { id: 'policy_browsers', name: 'Policy Browsers', category: 'interest' },
+      { id: 'quote_requests', name: 'Quote Requests', category: 'interest' },
+      
+      // Consideration Stage
+      { id: 'comparison_users', name: 'Policy Comparers', category: 'consideration' },
+      { id: 'cart_additions', name: 'Cart Additions', category: 'consideration' },
+      
+      // Purchase Stage
+      { id: 'applications', name: 'Applications', category: 'purchase' },
+      { id: 'purchases', name: 'Purchases', category: 'purchase' },
+      
+      // Retention Stage
+      { id: 'renewals', name: 'Renewals', category: 'retention' },
+      { id: 'upsells', name: 'Upsells', category: 'retention' }
+    ],
+    links: [
+      // Awareness to Interest
+      { source: 'website_visitors', target: 'policy_browsers', value: 8500 },
+      { source: 'social_media', target: 'policy_browsers', value: 3200 },
+      { source: 'referrals', target: 'policy_browsers', value: 1800 },
+      { source: 'policy_browsers', target: 'quote_requests', value: 4200 },
+      
+      // Interest to Consideration
+      { source: 'quote_requests', target: 'comparison_users', value: 2800 },
+      { source: 'comparison_users', target: 'cart_additions', value: 1900 },
+      
+      // Consideration to Purchase
+      { source: 'cart_additions', target: 'applications', value: 1200 },
+      { source: 'applications', target: 'purchases', value: 850 },
+      
+      // Purchase to Retention
+      { source: 'purchases', target: 'renewals', value: 680 },
+      { source: 'purchases', target: 'upsells', value: 170 }
+    ]
   };
 
   const claimsAreaData = {
@@ -282,6 +328,64 @@ const Dashboard = () => {
                 </p>
               </div>
               <FiDollarSign className="text-yellow-500 text-2xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Journey Sankey Diagram */}
+        <div className="mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">Customer Journey Flow</h2>
+                <p className="text-sm text-gray-600 mt-1">Track customer progression from awareness to retention</p>
+              </div>
+              <div className="flex items-center space-x-4 text-xs">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-blue-200 mr-2"></div>
+                  <span className="text-gray-600">Awareness</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-blue-400 mr-2"></div>
+                  <span className="text-gray-600">Interest</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-blue-600 mr-2"></div>
+                  <span className="text-gray-600">Consideration</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-blue-800 mr-2"></div>
+                  <span className="text-gray-600">Purchase</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-blue-900 mr-2"></div>
+                  <span className="text-gray-600">Retention</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <SankeyChart 
+                data={customerJourneyData}
+                width={800}
+                height={400}
+                title=""
+              />
+            </div>
+            
+            <div className="mt-6 grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-lg font-bold text-green-800">6.3%</div>
+                <div className="text-xs text-green-600">Overall Conversion</div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-lg font-bold text-blue-800">13,500</div>
+                <div className="text-xs text-blue-600">Total Visitors</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-lg font-bold text-purple-800">80%</div>
+                <div className="text-xs text-purple-600">Retention Rate</div>
+              </div>
             </div>
           </div>
         </div>
